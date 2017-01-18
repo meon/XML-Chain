@@ -1,0 +1,11 @@
+Build.PL
+Changes
+lib/XML/Chain.pm
+MANIFEST			This list of files
+META.json
+META.yml
+README
+t/01_basics.t
+xt/pod-coverage.t
+xt/pod-spell.t
+xt/pod.t
