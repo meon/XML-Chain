@@ -7,7 +7,6 @@ my $builder = Module::Build->new(
     license           => 'perl',
     dist_author       => 'Jozef Kutej <jkutej@cpan.org>',
     dist_version_from => 'lib/XML/Chain.pm',
-
     configure_requires => {
         'Module::Build' => '0.36',
     },
@@ -15,6 +14,7 @@ my $builder = Module::Build->new(
         'Test::Most' => 0,
     },
     requires => {
+        'perl'            => 5.008,
         'XML::LibXML'     => 0,
         'Moose'           => 0,
         'MooseX::Aliases' => 0,
