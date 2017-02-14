@@ -18,6 +18,7 @@ Moose::Exporter->setup_import_methods(
 use overload '""' => \&as_string, fallback => 1;
 
 has 'current_elements' => (is => 'rw', isa => 'ArrayRef', default => sub {[]});
+has 'document_element' => (is => 'rw', isa => 'HashRef', trigger => sub { $_[0]->dom->setDocumentElement($_[0]->{document_element}->{lxml}) });
 has 'dom' => (is => 'rw', isa => 'XML::LibXML::Document', lazy_build => 1);
 has '_xml_libxml' => (
     is      => 'rw',
@@ -38,8 +39,13 @@ sub xc {
 
     my $self = __PACKAGE__->new();
 
-    my $initial_el = $self->_create_element($el_name, @attrs);
-    $self->_document_element($initial_el);
+    my $ns_uri = {@attrs}->{xmlns} // '';
+
+    my $initial_el = {
+        ns   => $ns_uri,
+        lxml => $self->_create_element($el_name, $ns_uri, @attrs),
+    };
+    $self->document_element($initial_el);
     $self->current_elements([$initial_el]);
 
     return $self;
@@ -51,11 +57,17 @@ alias c => 'append_and_current';
 sub append_and_current {
     my ($self, $el_name, @attrs) = @_;
 
+    my $attrs_ns_uri = {@attrs}->{xmlns};
+
     $self->current_elements([
         $self->_cur_el_iterrate(sub {
             my ($el) = @_;
-            my $child_el = $self->_create_element($el_name, @attrs);
-            $el->appendChild($child_el);
+            my $ns_uri = $attrs_ns_uri // $el->{ns};
+            my $child_el = {
+                ns   => $ns_uri,
+                lxml => $self->_create_element($el_name, $ns_uri, @attrs),
+            };
+            $el->{lxml}->appendChild($child_el->{lxml});
             return $child_el;
         })
     ]);
@@ -68,7 +80,7 @@ sub append_text {
     my ($self, $text) = @_;
 
     $self->_cur_el_iterrate(sub {
-        return $_[0]->appendText($text);
+        return $_[0]->{lxml}->appendText($text);
     });
 
     return $self;
@@ -80,7 +92,12 @@ sub parent {
 
     $self->current_elements([
         $self->_cur_el_iterrate(sub {
-            return $_[0]->parentNode;
+            my ($el) = @_;
+            my $parent_el = $el->{lxml}->parentNode;
+            return {
+                ns   => $parent_el->namespaceURI // '',
+                lxml => $parent_el,
+            };
         })
     ]);
 
@@ -89,7 +106,61 @@ sub parent {
 
 sub root {
     my ($self) = @_;
-    $self->current_elements([$self->_document_element]);
+    $self->current_elements([$self->document_element]);
+    return $self;
+}
+
+sub find {
+    my ($self, $xpath) = @_;
+
+    warn 'TODO';
+
+    return $self;
+}
+
+sub children {
+    my ($self) = @_;
+
+    $self->current_elements([
+        $self->_cur_el_iterrate(sub {
+            my ($el) = @_;
+            return map { +{
+                ns   => $_->namespaceURI,
+                lxml => $_,
+            } } $el->{lxml}->childNodes;
+        })
+    ]);
+
+    return $self;
+}
+
+sub first {
+    my ($self) = @_;
+
+    my ($first) = @{$self->current_elements};
+    return $self unless $first;
+    $self->current_elements([$first]);
+
+    return $self;
+}
+
+sub set_auto_indent {
+    return $_[0]->auto_indent(1);
+}
+
+sub auto_indent {
+    my ($self) = @_;
+
+    warn 'TODO';
+
+    if (@_) {
+        my $set_to = shift(@_);
+
+        # TODO set auto indent for current element(s)....
+    }
+
+    # TODO return current element(s) auto indent....
+
     return $self;
 }
 
@@ -98,20 +169,35 @@ sub root {
 alias toString => 'as_string';
 sub as_string {
     my ($self) = @_;
-    return join('', $self->_cur_el_iterrate(sub { $_[0]->toString }));
+    return join('', $self->_cur_el_iterrate(sub { $_[0]->{lxml}->toString }));
+}
+
+sub text_content {
+    my ($self) = @_;
+
+    my $text = '';
+    $self->_cur_el_iterrate(sub {
+        my ($el) = @_;
+        $text .= $el->{lxml}->textContent;
+        return $el;
+    });
+
+    return $text;
+}
+
+sub as_xml_libxml {
+    my ($self) = @_;
+
+    my @elements;
+    $self->_cur_el_iterrate(sub {
+        my ($el) = @_;
+        push(@elements, $el->{lxml});
+    });
+
+    return @elements;
 }
 
 ### helpers
-
-sub _document_element {
-    my ($self, $set_doc_el) = @_;
-
-    my $dom = $self->dom;
-    $dom->setDocumentElement($set_doc_el)
-        if $set_doc_el;
-
-    return $dom->documentElement;
-}
 
 sub _cur_el_iterrate {
     my ($self, $code_ref) = @_;
@@ -120,8 +206,9 @@ sub _cur_el_iterrate {
 }
 
 sub _create_element {
-    my ($self, $el_name, @attrs) = @_;
-    my $new_element = $self->dom->createElement($el_name);
+    my ($self, $el_name, $ns, @attrs) = @_;
+
+    my $new_element = $self->dom->createElementNS($ns,$el_name);
     while (my $attr_name = shift(@attrs)) {
         my $attr_value = shift(@attrs);
         $new_element->setAttribute($attr_name => $attr_value);
@@ -143,6 +230,8 @@ XML::Chain - chained way of manipulating and inspecting XML documents
 =head1 SYNOPSIS
 
     use XML::Chain qw(xc);
+
+    # basics
     my $div = xc('div', class => 'pretty')
                 ->c('h1')->t('hello')
                 ->up
@@ -208,6 +297,28 @@ Sets document element as current element.
 
 Traverse current elements and replace them by their parents.
 
+=head2 find
+
+TODO
+
+    say $xc->find('//p/b[@class="less"]')->text_content;
+
+Look-up elements by xpath and set them as current elements.
+
+=head2 children
+
+Set all current elements child nodes as current elements.
+
+=head2 first
+
+Set first current elements as current elements.
+
+=head2 auto_indet / set_auto_indent
+
+TODO
+
+Turn on tidy/auto-indentation of document elements.
+
 =head1 METHODS
 
 =head2 as_string, toString
@@ -218,11 +329,13 @@ to get a string representing the whole document.
     $xc->as_string
     $xc->root->as_string
 
-L<XML::Chain> uses overloading, so string interpolation also works:
+=head2 as_xml_libxml
 
-    my $xc = xc('overload');
-    say "$xc";
-    # <overload/>
+Returns array of current elements as L<XML::LibXML> objects.
+
+=head2 text_content
+
+Returns text content of all current XML elements.
 
 =head1 CONTRIBUTORS
 
@@ -231,6 +344,7 @@ code, sending patches, reporting bugs, asking questions, suggesting useful
 advice, nitpicking, chatting on IRC or commenting on my blog (in no particular
 order):
 
+    Mohammad S Anwar
     you?
 
 =head1 BUGS
@@ -243,7 +357,7 @@ Jozef Kutej
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2009 Jozef Kutej, all rights reserved.
+Copyright 2017 Jozef Kutej, all rights reserved.
 
 This program is free software; you can redistribute it and/or modify it
 under the same terms as Perl itself.

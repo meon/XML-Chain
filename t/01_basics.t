@@ -32,7 +32,7 @@ subtest 'basic creation' => sub {
     is($icon_el->as_string, '<i class="icon-download icon-white"/>', '=head2 xc; sample');
 
     my $span_el = xc('span')->t('some')->t(' ')->t('more text');
-    is($span_el->as_string, '<span>some more text</span>', '=haed2 t; sample');
+    is($span_el->as_string, '<span>some more text</span>', '=head2 t; sample');
 
     my $over_el = xc('overload');
     is("$over_el", '<overload/>', '=head2 as_string; sample');
@@ -47,5 +47,26 @@ subtest 'basic creation' => sub {
 
     return;
 };
+
+subtest 'navigation' => sub {
+    my $body = xc('body')
+                ->c('p')->t('para1')->up
+                ->c('p')
+                    ->t('para2 ')
+                    ->c('b')->t('important')->up
+                    ->t(' para2_2 ')
+                    ->c('b', class => 'less')->t('less important')->up
+                    ->t(' para2_3')
+                ->root;
+    is($body->as_string, '<body><p>para1</p><p>para2 <b>important</b> para2_2 <b class="less">less important</b> para2_3</p></body>', 'test test xml');
+    my ($para_el) = $body->children->first->as_xml_libxml;
+    isa_ok($para_el, 'XML::LibXML::Element', 'first <p>');
+
+    XPATH_TODO: {
+        local $TODO = 'to be done...';
+        is($body->root->find('//p/b[@class="less"]')->text_content, 'less important', 'find("//p/b[@class="less"]")');
+    };
+};
+
 
 done_testing;
