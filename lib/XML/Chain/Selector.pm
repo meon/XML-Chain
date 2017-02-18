@@ -71,8 +71,22 @@ sub root {
 
 sub find {
     my ($self, $xpath) = @_;
+    croak 'need xpath as argument' unless defined($xpath);
 
-    warn 'TODO';
+    my $xpc = XML::LibXML::XPathContext->new();
+    return $self->_new_related([
+        $self->_cur_el_iterrate(sub {
+            my ($el) = @_;
+            my $lxml_el = $el->{lxml};
+            return
+                map { +{
+                    ns   => $_->namespaceURI // '',
+                    lxml => $_,
+                } }
+                $xpc->findnodes($xpath, $lxml_el )
+            ;
+        })
+    ]);
 
     return $self;
 }
@@ -152,6 +166,14 @@ sub as_xml_libxml {
     });
 
     return @elements;
+}
+
+alias size => 'count';
+sub count {
+    my ($self) = @_;
+    my $count = 0;
+    $self->_cur_el_iterrate(sub {$count++});
+    return $count;
 }
 
 ### helpers
@@ -254,8 +276,6 @@ Traverse current elements and replace them by their parents.
 
 =head2 find
 
-TODO
-
     say $xc->find('//p/b[@class="less"]')->text_content;
 
 Look-up elements by xpath and set them as current elements.
@@ -291,6 +311,12 @@ Returns array of current elements as L<XML::LibXML> objects.
 =head2 text_content
 
 Returns text content of all current XML elements.
+
+=head2 count / size
+
+    say $xc->find('//b')->count;
+
+Return the number of current elements.
 
 =head1 AUTHOR
 

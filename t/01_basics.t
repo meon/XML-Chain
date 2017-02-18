@@ -62,15 +62,16 @@ subtest 'navigation' => sub {
                     ->t(' para2_2 ')
                     ->c('b', class => 'less')->t('less important')->up
                     ->t(' para2_3')
+                    ->up
+                ->c('p')->t('the last one')
                 ->root;
-    is($body->as_string, '<body><p>para1</p><p>para2 <b>important</b> para2_2 <b class="less">less important</b> para2_3</p></body>', 'test test xml');
+    is($body->as_string, '<body><p>para1</p><p>para2 <b>important</b> para2_2 <b class="less">less important</b> para2_3</p><p>the last one</p></body>', 'test test xml');
     my ($para_el) = $body->children->first->as_xml_libxml;
     isa_ok($para_el, 'XML::LibXML::Element', 'first <p>');
 
-    XPATH_TODO: {
-        local $TODO = 'to be done...';
-        is($body->root->find('//p/b[@class="less"]')->text_content, 'less important', 'find("//p/b[@class="less"]")');
-    };
+    is($body->root->find('//b')->count, 2, 'two <b> tags');
+    is($body->root->find('//p/b[@class="less"]')->text_content, 'less important', q{find('//p/b[@class="less"]')});
+    is($body->root->find('/body/p[position() = last()]')->text_content, 'the last one', q{find('/body/p[position() = last()]')});
 };
 
 
