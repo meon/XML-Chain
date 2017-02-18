@@ -12,7 +12,7 @@ use lib "$Bin/lib";
 
 use XML::Chain qw(xc);
 
-subtest 'auto indent' => sub {
+subtest 'auto indent (synopsis of XML::Chain::Selector)' => sub {
     local $TODO = 'to be done...';
 
     # namespaces && auto indentation

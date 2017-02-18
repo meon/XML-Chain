@@ -1,2 +1,6 @@
+0.02  2017-XX-XX
+    - namespaces support
+    - chained methods reworked into selectors
+
 0.01  2017-01-18
     - initial prototype version

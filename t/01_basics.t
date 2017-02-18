@@ -14,10 +14,15 @@ use XML::Chain qw(xc);
 
 subtest 'xc()' => sub {
     my $body = xc('body');
-    isa_ok($body, 'XML::Chain', 'xc(exported)');
+    isa_ok($body, 'XML::Chain::Selector', 'xc(exported) returns selector');
+    isa_ok($body->xc, 'XML::Chain', 'xc(exported)->xc is a reference to the parent');
     is($body->as_string, '<body/>', 'create an element');
 
     cmp_ok($body->as_string, 'eq', $body->toString, 'toString alias to as_string');
+
+    my $h1 = $body->c('h1')->t('I am heading');
+    isa_ok($h1,'XML::Chain::Selector','$h1 → selector on traversal');
+    is($body->as_string, '<body><h1>I am heading</h1></body>', 'selector create an element');
 };
 
 subtest 'basic creation' => sub {
