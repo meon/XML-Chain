@@ -16,7 +16,7 @@ use overload '""' => \&as_string, fallback => 1;
 has 'ns' => (is => 'rw', isa => 'Str', required => 1);
 has 'lxml' => (is => 'rw', isa => 'XML::LibXML::Node', required => 1);
 has 'auto_indent' => (is => 'rw',);
-has 'xc' => (is => 'rw', isa => 'XML::Chain', required => 1, weak_ref => 1);
+has '_xc' => (is => 'rw', isa => 'XML::Chain', required => 1, weak_ref => 1);
 
 my @selector_methods = qw(
     c append_and_current
@@ -51,7 +51,7 @@ sub _selector {
     my ($self) = @_;
     return XML::Chain::Selector->new(
         current_elements => [$self],
-        xc               => $self->{xc},
+        _xc              => $self->{_xc},
     );
 }
 

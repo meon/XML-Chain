@@ -15,7 +15,6 @@ use XML::Chain qw(xc);
 subtest 'xc()' => sub {
     my $body = xc('body');
     isa_ok($body, 'XML::Chain::Selector', 'xc(exported) returns selector');
-    isa_ok($body->xc, 'XML::Chain', 'xc(exported)->xc is a reference to the parent');
     is($body->as_string, '<body/>', 'create an element');
 
     cmp_ok($body->as_string, 'eq', $body->toString, 'toString alias to as_string');

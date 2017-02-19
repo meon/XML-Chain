@@ -11,6 +11,7 @@ use XML::LibXML;
 use XML::Chain::Selector;
 use XML::Chain::Element;
 use Carp qw(croak);
+use Scalar::Util qw(blessed);
 use Moose;
 use Moose::Exporter;
 Moose::Exporter->setup_import_methods(
@@ -48,7 +49,7 @@ sub xc {
     $self->document_element($initial_el);
     return XML::Chain::Selector->new(
         current_elements => [$initial_el],
-        xc               => $self,
+        _xc              => $self,
     );
 }
 
@@ -71,9 +72,11 @@ sub _xc_el {
     return $self->{_xc_el}->{$eid} //= XML::Chain::Element->new(
         ns   => $el->namespaceURI // '',
         lxml => $el,
-        xc   => $self,
+        _xc  => $self,
     );
 }
+
+sub _xc { return $_[0]; }
 
 1;
 

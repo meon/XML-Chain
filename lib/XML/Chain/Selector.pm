@@ -13,7 +13,7 @@ use Carp qw(croak);
 use XML::Tidy;
 
 has 'current_elements' => (is => 'rw', isa => 'ArrayRef', default => sub {[]});
-has 'xc' => (is => 'rw', isa => 'XML::Chain', required => 1);
+has '_xc' => (is => 'rw', isa => 'XML::Chain', required => 1);
 
 use overload '""' => \&as_string, fallback => 1;
 
@@ -29,7 +29,7 @@ sub append_and_current {
         $self->_cur_el_iterrate(sub {
             my ($el) = @_;
             my $ns_uri = $attrs_ns_uri // $el->{ns};
-            my $child_el = $self->{xc}->_create_element($el_name, $ns_uri, @attrs);
+            my $child_el = $self->{_xc}->_create_element($el_name, $ns_uri, @attrs);
             $el->{lxml}->appendChild($child_el->{lxml});
             return $child_el;
         })
@@ -55,7 +55,7 @@ sub parent {
         $self->_cur_el_iterrate(sub {
             my ($el) = @_;
             my $parent_el = $el->{lxml}->parentNode;
-            return $self->{xc}->_xc_el($parent_el);
+            return $self->{_xc}->_xc_el($parent_el);
         })
     ]);
 }
@@ -63,7 +63,7 @@ sub parent {
 alias root => 'document_element';
 sub document_element {
     my ($self) = @_;
-    return $self->_new_related([$self->{xc}->document_element]);
+    return $self->_new_related([$self->{_xc}->document_element]);
 }
 
 sub find {
@@ -76,7 +76,7 @@ sub find {
             my ($el) = @_;
             my $lxml_el = $el->{lxml};
             return
-                map { $self->{xc}->_xc_el($_) }
+                map { $self->{_xc}->_xc_el($_) }
                 $xpc->findnodes($xpath, $lxml_el )
             ;
         })
@@ -91,7 +91,7 @@ sub children {
     return $self->_new_related([
         $self->_cur_el_iterrate(sub {
             my ($el) = @_;
-            return map { $self->{xc}->_xc_el($_) } $el->{lxml}->childNodes;
+            return map { $self->{_xc}->_xc_el($_) } $el->{lxml}->childNodes;
         })
     ]);
 }
@@ -131,7 +131,7 @@ sub as_string {
         return (
             $auto_indent
             ? XML::Tidy->new(xml => $el->{lxml})->tidy($auto_indent_chars)->toString
-            : $el->{lxml}->toString,
+            : $el->{lxml}->toString
         )
     }));
 }
@@ -190,7 +190,7 @@ sub _new_related {
     croak 'need array ref a argument' unless ref($current_elements) eq 'ARRAY';
     return __PACKAGE__->new(
         current_elements => $current_elements,
-        xc               => $self->{xc},
+        _xc              => $self->{_xc},
     );
 }
 
