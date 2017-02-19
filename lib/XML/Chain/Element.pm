@@ -13,10 +13,8 @@ use Carp qw(croak);
 
 use overload '""' => \&as_string, fallback => 1;
 
-has 'ns' => (is => 'rw', isa => 'Str', required => 1);
-has 'lxml' => (is => 'rw', isa => 'XML::LibXML::Node', required => 1);
-has 'auto_indent' => (is => 'rw',);
-has '_xc' => (is => 'rw', isa => 'XML::Chain', required => 1, weak_ref => 1);
+has '_xc_el_data' => (is => 'ro', isa => 'HashRef',    required => 1);
+has '_xc'         => (is => 'rw', isa => 'XML::Chain', required => 1);
 
 my @selector_methods = qw(
     c append_and_current
@@ -45,18 +43,17 @@ foreach my $sel_method (@selector_methods) {
     );
 }
 
-sub as_xml_libxml { return $_[0]->{lxml}; }
+sub as_xml_libxml {return $_[0]->{_xc_el_data}->{lxml};}
 
 sub _selector {
     my ($self) = @_;
     return XML::Chain::Selector->new(
-        current_elements => [$self],
+        current_elements => [$self->{_xc_el_data}],
         _xc              => $self->{_xc},
     );
 }
 
 1;
-
 
 __END__
 

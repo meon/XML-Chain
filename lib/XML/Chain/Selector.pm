@@ -12,7 +12,8 @@ use MooseX::Aliases;
 use Carp qw(croak);
 use XML::Tidy;
 
-has 'current_elements' => (is => 'rw', isa => 'ArrayRef', default => sub {[]});
+has 'current_elements' =>
+    (is => 'rw', isa => 'ArrayRef', default => sub {[]});
 has '_xc' => (is => 'rw', isa => 'XML::Chain', required => 1);
 
 use overload '""' => \&as_string, fallback => 1;
@@ -20,50 +21,63 @@ use overload '""' => \&as_string, fallback => 1;
 ### chained methods
 
 alias c => 'append_and_current';
+
 sub append_and_current {
     my ($self, $el_name, @attrs) = @_;
 
     my $attrs_ns_uri = {@attrs}->{xmlns};
 
-    return $self->_new_related([
-        $self->_cur_el_iterrate(sub {
-            my ($el) = @_;
-            my $ns_uri = $attrs_ns_uri // $el->{ns};
-            my $child_el = $self->{_xc}->_create_element($el_name, $ns_uri, @attrs);
-            $el->{lxml}->appendChild($child_el->{lxml});
-            return $child_el;
-        })
-    ]);
+    return $self->_new_related(
+        [   $self->_cur_el_iterrate(
+                sub {
+                    my ($el) = @_;
+                    my $ns_uri = $attrs_ns_uri // $el->{ns};
+                    my $child_el = $self->{_xc}
+                        ->_create_element($el_name, $ns_uri, @attrs);
+                    $el->{lxml}->appendChild($child_el->{lxml});
+                    return $child_el;
+                }
+            )
+        ]
+    );
 }
 
 alias t => 'append_text';
+
 sub append_text {
     my ($self, $text) = @_;
 
-    $self->_cur_el_iterrate(sub {
-        return $_[0]->{lxml}->appendText($text);
-    });
+    $self->_cur_el_iterrate(
+        sub {
+            return $_[0]->{lxml}->appendText($text);
+        }
+    );
 
     return $self;
 }
 
 alias up => 'parent';
+
 sub parent {
     my ($self) = @_;
 
-    return $self->_new_related([
-        $self->_cur_el_iterrate(sub {
-            my ($el) = @_;
-            my $parent_el = $el->{lxml}->parentNode;
-            return $self->{_xc}->_xc_el($parent_el);
-        })
-    ]);
+    return $self->_new_related(
+        [   $self->_cur_el_iterrate(
+                sub {
+                    my ($el) = @_;
+                    my $parent_el = $el->{lxml}->parentNode;
+                    return $self->{_xc}->_xc_el_data($parent_el);
+                }
+            )
+        ]
+    );
 }
 
 alias root => 'document_element';
+
 sub document_element {
     my ($self) = @_;
-    return $self->_new_related([$self->{_xc}->document_element]);
+    return $self->{_xc}->document_element;
 }
 
 sub find {
@@ -71,16 +85,18 @@ sub find {
     croak 'need xpath as argument' unless defined($xpath);
 
     my $xpc = XML::LibXML::XPathContext->new();
-    return $self->_new_related([
-        $self->_cur_el_iterrate(sub {
-            my ($el) = @_;
-            my $lxml_el = $el->{lxml};
-            return
-                map { $self->{_xc}->_xc_el($_) }
-                $xpc->findnodes($xpath, $lxml_el )
-            ;
-        })
-    ]);
+    return $self->_new_related(
+        [   $self->_cur_el_iterrate(
+                sub {
+                    my ($el) = @_;
+                    my $lxml_el = $el->{lxml};
+                    return
+                        map {$self->{_xc}->_xc_el_data($_)}
+                        $xpc->findnodes($xpath, $lxml_el);
+                }
+            )
+        ]
+    );
 
     return $self;
 }
@@ -88,12 +104,17 @@ sub find {
 sub children {
     my ($self) = @_;
 
-    return $self->_new_related([
-        $self->_cur_el_iterrate(sub {
-            my ($el) = @_;
-            return map { $self->{_xc}->_xc_el($_) } $el->{lxml}->childNodes;
-        })
-    ]);
+    return $self->_new_related(
+        [   $self->_cur_el_iterrate(
+                sub {
+                    my ($el) = @_;
+                    return
+                        map {$self->{_xc}->_xc_el_data($_)}
+                        $el->{lxml}->childNodes;
+                }
+            )
+        ]
+    );
 }
 
 sub first {
@@ -118,33 +139,46 @@ sub auto_indent {
 ### methods
 
 alias toString => 'as_string';
+
 sub as_string {
     my ($self) = @_;
-    return join('', $self->_cur_el_iterrate(sub {
-        my ($el) = @_;
+    return join(
+        '',
+        $self->_cur_el_iterrate(
+            sub {
+                my ($el) = @_;
 
-        my $auto_indent       = $el->{auto_indent};
-        my $auto_indent_chars = ((ref($auto_indent) eq 'HASH') ? $auto_indent->{chars} : undef);
-        $auto_indent_chars = "\t"
-            unless defined($auto_indent_chars);
+                my $auto_indent       = $el->{auto_indent};
+                my $auto_indent_chars = (
+                    (ref($auto_indent) eq 'HASH')
+                    ? $auto_indent->{chars}
+                    : undef
+                );
+                $auto_indent_chars = "\t"
+                    unless defined($auto_indent_chars);
 
-        return (
-            $auto_indent
-            ? XML::Tidy->new(xml => $el->{lxml})->tidy($auto_indent_chars)->toString
-            : $el->{lxml}->toString
+                return (
+                    $auto_indent
+                    ? XML::Tidy->new(xml => $el->{lxml})
+                        ->tidy($auto_indent_chars)->toString
+                    : $el->{lxml}->toString
+                );
+            }
         )
-    }));
+    );
 }
 
 sub text_content {
     my ($self) = @_;
 
     my $text = '';
-    $self->_cur_el_iterrate(sub {
-        my ($el) = @_;
-        $text .= $el->{lxml}->textContent;
-        return $el;
-    });
+    $self->_cur_el_iterrate(
+        sub {
+            my ($el) = @_;
+            $text .= $el->{lxml}->textContent;
+            return $el;
+        }
+    );
 
     return $text;
 }
@@ -153,15 +187,18 @@ sub as_xml_libxml {
     my ($self) = @_;
 
     my @elements;
-    $self->_cur_el_iterrate(sub {
-        my ($el) = @_;
-        push(@elements, $el->{lxml});
-    });
+    $self->_cur_el_iterrate(
+        sub {
+            my ($el) = @_;
+            push(@elements, $el->{lxml});
+        }
+    );
 
     return @elements;
 }
 
 alias size => 'count';
+
 sub count {
     my ($self) = @_;
     my $count = 0;
@@ -174,7 +211,11 @@ sub single {
     croak 'more current elements then one'
         if @{$self->current_elements} > 1;
     croak 'no current element' unless @{$self->current_elements} == 1;
-    return @{$self->current_elements}[0];
+    my $element = @{$self->current_elements}[0];
+    return XML::Chain::Element->new(
+        _xc_el_data => $element,
+        _xc         => $self->{_xc},
+    );
 }
 
 ### helpers
@@ -182,12 +223,13 @@ sub single {
 sub _cur_el_iterrate {
     my ($self, $code_ref) = @_;
     croak 'need code ref a argument' unless ref($code_ref) eq 'CODE';
-    return map { $code_ref->($_) } @{$self->current_elements};
+    return map {$code_ref->($_)} @{$self->current_elements};
 }
 
 sub _new_related {
     my ($self, $current_elements) = @_;
-    croak 'need array ref a argument' unless ref($current_elements) eq 'ARRAY';
+    croak 'need array ref a argument'
+        unless ref($current_elements) eq 'ARRAY';
     return __PACKAGE__->new(
         current_elements => $current_elements,
         _xc              => $self->{_xc},
@@ -195,7 +237,6 @@ sub _new_related {
 }
 
 1;
-
 
 __END__
 

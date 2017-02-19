@@ -15,7 +15,6 @@ use XML::Chain qw(xc);
 subtest 'auto indent (synopsis of XML::Chain::Selector)' => sub {
     # simple indent
     my $simple = xc('div')->auto_indent(1)->c('div')->t('in')->root;
-
     eq_or_diff_text($simple->as_string, "<div>\n\t<div>in</div>\n</div>", 'auto indented simple (from =head2 auto_indent)');
     $simple->find('/div')->auto_indent(0);
     eq_or_diff_text($simple->as_string, "<div><div>in</div></div>", 'indentation is global, not per selector');

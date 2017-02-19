@@ -14,17 +14,8 @@ use Carp qw(croak);
 use Scalar::Util qw(blessed);
 use Moose;
 use Moose::Exporter;
-Moose::Exporter->setup_import_methods(
-    as_is     => [ 'xc' ],
-);
+Moose::Exporter->setup_import_methods(as_is => ['xc'],);
 
-has 'document_element' => (
-    is      => 'rw',
-    isa     => 'XML::Chain::Element',
-    trigger => sub {
-        $_[0]->dom->setDocumentElement($_[0]->{document_element}->{lxml});
-    }
-);
 has 'dom' => (is => 'rw', isa => 'XML::LibXML::Document', lazy_build => 1);
 has '_xml_libxml' => (
     is      => 'rw',
@@ -46,40 +37,47 @@ sub xc {
     my $ns_uri = {@attrs}->{xmlns} // '';
 
     my $initial_el = $self->_create_element($el_name, $ns_uri, @attrs);
-    $self->document_element($initial_el);
-    return XML::Chain::Selector->new(
-        current_elements => [$initial_el],
-        _xc              => $self,
-    );
+    $self->dom->setDocumentElement($initial_el->{lxml});
+    return $self->document_element;
 }
 
 sub _create_element {
     my ($self, $el_name, $ns, @attrs) = @_;
 
-    my $new_element = $self->dom->createElementNS($ns,$el_name);
+    my $new_element = $self->dom->createElementNS($ns, $el_name);
     while (my $attr_name = shift(@attrs)) {
         my $attr_value = shift(@attrs);
         $new_element->setAttribute($attr_name => $attr_value);
     }
-    return $self->_xc_el($new_element);
+    return $self->_xc_el_data($new_element);
 }
 
-sub _xc_el {
+sub _xc_el_data {
     my ($self, $el) = @_;
     croak 'need element as argument' unless defined($el);
 
     my $eid = $el->unique_key;
-    return $self->{_xc_el}->{$eid} //= XML::Chain::Element->new(
-        ns   => $el->namespaceURI // '',
+    return $self->{_xc_el_data}->{$eid} //= {
+        ns => $el->namespaceURI // '',
         lxml => $el,
-        _xc  => $self,
+    };
+}
+
+sub _lxml_document_element {
+    return $_[0]->dom->documentElement;
+}
+
+sub _xc {return $_[0];}
+
+sub document_element {
+    my ($self) = @_;
+    return XML::Chain::Element->new(
+        _xc_el_data => $self->_xc_el_data($self->_lxml_document_element),
+        _xc         => $self,
     );
 }
 
-sub _xc { return $_[0]; }
-
 1;
-
 
 __END__
 
