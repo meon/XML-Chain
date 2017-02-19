@@ -2,6 +2,7 @@
     - namespaces support
     - chained methods reworked into selectors
     - add find($xpath) method
+    - first version of auto_indent(1) using XML::Tidy
 
 0.01  2017-01-18
     - initial prototype version

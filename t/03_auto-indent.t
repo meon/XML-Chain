@@ -13,11 +13,16 @@ use lib "$Bin/lib";
 use XML::Chain qw(xc);
 
 subtest 'auto indent (synopsis of XML::Chain::Selector)' => sub {
-    local $TODO = 'to be done...';
+    # simple indent
+    my $simple = xc('div')->auto_indent(1)->c('div')->t('in')->root;
+
+    eq_or_diff_text($simple->as_string, "<div>\n\t<div>in</div>\n</div>", 'auto indented simple (from =head2 auto_indent)');
+    $simple->find('/div')->auto_indent(0);
+    eq_or_diff_text($simple->as_string, "<div><div>in</div></div>", 'indentation is global, not per selector');
 
     # namespaces && auto indentation
     my $user = xc('user', xmlns => 'testns')
-                ->set_auto_indent
+                ->auto_indent({chars=>' 'x4})
                 ->c('name')->t('Johnny Thinker')->up
                 ->c('username')->t('jt')->up
                 ->c('bio')
@@ -34,7 +39,7 @@ subtest 'auto indent (synopsis of XML::Chain::Selector)' => sub {
 done_testing;
 
 sub user_as_string {
-    return <<'__USER_AS_STRING__'
+    my $usr = <<'__USER_AS_STRING__'
 <user xmlns="testns">
     <name>Johnny Thinker</name>
     <username>jt</username>
@@ -47,4 +52,7 @@ sub user_as_string {
     </bio>
 </user>
 __USER_AS_STRING__
+    ;
+    chomp($usr);
+    return $usr;
 }

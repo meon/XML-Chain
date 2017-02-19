@@ -3,11 +3,13 @@ package XML::Chain;
 use warnings;
 use strict;
 use utf8;
+use 5.010;
 
 our $VERSION = '0.02';
 
 use XML::LibXML;
 use XML::Chain::Selector;
+use Carp qw(croak);
 use Moose;
 use Moose::Exporter;
 Moose::Exporter->setup_import_methods(
@@ -35,10 +37,7 @@ sub xc {
 
     my $ns_uri = {@attrs}->{xmlns} // '';
 
-    my $initial_el = {
-        ns   => $ns_uri,
-        lxml => $self->_create_element($el_name, $ns_uri, @attrs),
-    };
+    my $initial_el = $self->_create_element($el_name, $ns_uri, @attrs);
     $self->document_element($initial_el);
     return XML::Chain::Selector->new(
         current_elements => [$initial_el],
@@ -54,7 +53,18 @@ sub _create_element {
         my $attr_value = shift(@attrs);
         $new_element->setAttribute($attr_name => $attr_value);
     }
-    return $new_element;
+    return $self->_xc_el($new_element);
+}
+
+sub _xc_el {
+    my ($self, $el) = @_;
+    croak 'need element as argument' unless defined($el);
+
+    my $eid = $el->unique_key;
+    return $self->{_xc_el}->{$eid} //= {
+        ns   => $el->namespaceURI // '',
+        lxml => $el,
+    };
 }
 
 1;
@@ -101,7 +111,7 @@ See L<XML::Chain::Selector/c, append_and_current> for the element parameter
 description and L<XML::Chain::Selector/CHAINED METHODS> for methods of
 returned object.
 
-=head1 CONTRIBUTORS
+=head1 CONTRIBUTORS & CREDITS
 
 Initially inspired by Strophe.Builder, then also by jQuery.
 

@@ -14,8 +14,9 @@ my $builder = Module::Build->new(
         'Test::Most' => 0,
     },
     requires => {
-        'perl'            => 5.008,
+        'perl'            => 5.010,
         'XML::LibXML'     => 0,
+        'XML::Tidy'       => 0,
         'Moose'           => 0,
         'MooseX::Aliases' => 0,
         'Moose::Exporter' => 0,

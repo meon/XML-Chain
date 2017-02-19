@@ -3,12 +3,14 @@ package XML::Chain::Selector;
 use warnings;
 use strict;
 use utf8;
+use 5.010;
 
 our $VERSION = '0.02';
 
 use Moose;
 use MooseX::Aliases;
 use Carp qw(croak);
+use XML::Tidy;
 
 has 'current_elements' => (is => 'rw', isa => 'ArrayRef', default => sub {[]});
 has 'xc' => (is => 'rw', isa => 'XML::Chain', required => 1);
@@ -27,10 +29,7 @@ sub append_and_current {
         $self->_cur_el_iterrate(sub {
             my ($el) = @_;
             my $ns_uri = $attrs_ns_uri // $el->{ns};
-            my $child_el = {
-                ns   => $ns_uri,
-                lxml => $self->xc->_create_element($el_name, $ns_uri, @attrs),
-            };
+            my $child_el = $self->{xc}->_create_element($el_name, $ns_uri, @attrs);
             $el->{lxml}->appendChild($child_el->{lxml});
             return $child_el;
         })
@@ -56,17 +55,14 @@ sub parent {
         $self->_cur_el_iterrate(sub {
             my ($el) = @_;
             my $parent_el = $el->{lxml}->parentNode;
-            return {
-                ns   => $parent_el->namespaceURI // '',
-                lxml => $parent_el,
-            };
+            return $self->{xc}->_xc_el($parent_el);
         })
     ]);
 }
 
 sub root {
     my ($self) = @_;
-    return $self->_new_related([$self->xc->document_element]);
+    return $self->_new_related([$self->{xc}->document_element]);
 }
 
 sub find {
@@ -79,10 +75,7 @@ sub find {
             my ($el) = @_;
             my $lxml_el = $el->{lxml};
             return
-                map { +{
-                    ns   => $_->namespaceURI // '',
-                    lxml => $_,
-                } }
+                map { $self->{xc}->_xc_el($_) }
                 $xpc->findnodes($xpath, $lxml_el )
             ;
         })
@@ -97,10 +90,7 @@ sub children {
     return $self->_new_related([
         $self->_cur_el_iterrate(sub {
             my ($el) = @_;
-            return map { +{
-                ns   => $_->namespaceURI,
-                lxml => $_,
-            } } $el->{lxml}->childNodes;
+            return map { $self->{xc}->_xc_el($_) } $el->{lxml}->childNodes;
         })
     ]);
 }
@@ -115,22 +105,11 @@ sub first {
     );
 }
 
-sub set_auto_indent {
-    return $_[0]->auto_indent(1);
-}
-
 sub auto_indent {
-    my ($self) = @_;
+    my ($self, $set_to) = @_;
+    croak 'need true/false/options for auto indentation ' if @_ < 2;
 
-    warn 'TODO';
-
-    if (@_) {
-        my $set_to = shift(@_);
-
-        # TODO set auto indent for current element(s)....
-    }
-
-    # TODO return current element(s) auto indent....
+    $self->_cur_el_iterrate(sub {$_[0]->{auto_indent} = $set_to});
 
     return $self;
 }
@@ -140,7 +119,20 @@ sub auto_indent {
 alias toString => 'as_string';
 sub as_string {
     my ($self) = @_;
-    return join('', $self->_cur_el_iterrate(sub { $_[0]->{lxml}->toString }));
+    return join('', $self->_cur_el_iterrate(sub {
+        my ($el) = @_;
+
+        my $auto_indent       = $el->{auto_indent};
+        my $auto_indent_chars = ((ref($auto_indent) eq 'HASH') ? $auto_indent->{chars} : undef);
+        $auto_indent_chars = "\t"
+            unless defined($auto_indent_chars);
+
+        return (
+            $auto_indent
+            ? XML::Tidy->new(xml => $el->{lxml})->tidy($auto_indent_chars)->toString
+            : $el->{lxml}->toString,
+        )
+    }));
 }
 
 sub text_content {
@@ -189,7 +181,7 @@ sub _new_related {
     croak 'need array ref a argument' unless ref($current_elements) eq 'ARRAY';
     return __PACKAGE__->new(
         current_elements => $current_elements,
-        xc               => $self->xc,
+        xc               => $self->{xc},
     );
 }
 
@@ -207,7 +199,7 @@ XML::Chain::Selector - selector for traversing the XML::Chain
 =head1 SYNOPSIS
 
     my $user = xc('user', xmlns => 'testns')
-                ->set_auto_indent
+                ->auto_indent(1)
                 ->c('name')->t('Johnny Thinker')->up
                 ->c('username')->t('jt')->up
                 ->c('bio')
@@ -219,7 +211,7 @@ XML::Chain::Selector - selector for traversing the XML::Chain
                 ->root;
     say $user->as_string;
 
-Will produce (currently not-indented, set_auto_indent is work in progress):
+Will print:
 
     <user xmlns="testns">
         <name>Johnny Thinker</name>
@@ -288,11 +280,32 @@ Set all current elements child nodes as current elements.
 
 Set first current elements as current elements.
 
-=head2 auto_indet / set_auto_indent
+=head2 auto_indent
 
-TODO
+    my $simple = xc('div')
+                    ->auto_indent(1)
+                    ->c('div')->t('in')
+                    ->root;
+    say $simple->as_string;
 
-Turn on tidy/auto-indentation of document elements.
+Will print:
+
+    <div>
+        <div>in</div>
+    </div>
+
+Turn on/off tidy/auto-indentation of document elements. Default indentation
+characters are tabs.
+
+Argument can be either true/false scalar or a hashref with indentation
+options. Currently C< {chars=>' 'x4} > will set indentation characters to
+be four spaces.
+
+NOTE Currently works only on element on which C<as_string()> is called
+     using L<HTML::Tidy>.
+     In the future it is planned to be possible to set idendentation
+     on/off also for nested elements. For example not to indend embedded
+     html elements.
 
 =head1 METHODS
 
