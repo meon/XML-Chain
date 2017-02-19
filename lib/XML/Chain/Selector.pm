@@ -60,7 +60,8 @@ sub parent {
     ]);
 }
 
-sub root {
+alias root => 'document_element';
+sub document_element {
     my ($self) = @_;
     return $self->_new_related([$self->{xc}->document_element]);
 }
@@ -166,6 +167,14 @@ sub count {
     my $count = 0;
     $self->_cur_el_iterrate(sub {$count++});
     return $count;
+}
+
+sub single {
+    my ($self) = @_;
+    croak 'more current elements then one'
+        if @{$self->current_elements} > 1;
+    croak 'no current element' unless @{$self->current_elements} == 1;
+    return @{$self->current_elements}[0];
 }
 
 ### helpers
@@ -307,6 +316,10 @@ NOTE Currently works only on element on which C<as_string()> is called
      on/off also for nested elements. For example not to indend embedded
      html elements.
 
+WARNING L<HTML::Tidy> has a circular reference and leaks memory when used.
+        Better don't use auto_indent() at in this version in persistant
+        environments.
+
 =head1 METHODS
 
 =head2 as_string, toString
@@ -330,6 +343,13 @@ Returns text content of all current XML elements.
     say $xc->find('//b')->count;
 
 Return the number of current elements.
+
+=head2 single
+
+    my $lxml_el = $xc->find('//b')->first->as_xml_libxml;
+
+Checks is there is exactly one element in current elements and return it
+as L<XML::Chain::Element> object.
 
 =head1 AUTHOR
 

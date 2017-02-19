@@ -9,6 +9,7 @@ our $VERSION = '0.02';
 
 use XML::LibXML;
 use XML::Chain::Selector;
+use XML::Chain::Element;
 use Carp qw(croak);
 use Moose;
 use Moose::Exporter;
@@ -16,7 +17,13 @@ Moose::Exporter->setup_import_methods(
     as_is     => [ 'xc' ],
 );
 
-has 'document_element' => (is => 'rw', isa => 'HashRef', trigger => sub { $_[0]->dom->setDocumentElement($_[0]->{document_element}->{lxml}) });
+has 'document_element' => (
+    is      => 'rw',
+    isa     => 'XML::Chain::Element',
+    trigger => sub {
+        $_[0]->dom->setDocumentElement($_[0]->{document_element}->{lxml});
+    }
+);
 has 'dom' => (is => 'rw', isa => 'XML::LibXML::Document', lazy_build => 1);
 has '_xml_libxml' => (
     is      => 'rw',
@@ -61,10 +68,11 @@ sub _xc_el {
     croak 'need element as argument' unless defined($el);
 
     my $eid = $el->unique_key;
-    return $self->{_xc_el}->{$eid} //= {
+    return $self->{_xc_el}->{$eid} //= XML::Chain::Element->new(
         ns   => $el->namespaceURI // '',
         lxml => $el,
-    };
+        xc   => $self,
+    );
 }
 
 1;

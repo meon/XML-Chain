@@ -65,9 +65,8 @@ subtest 'navigation' => sub {
                     ->up
                 ->c('p')->t('the last one')
                 ->root;
-    is($body->as_string, '<body><p>para1</p><p>para2 <b>important</b> para2_2 <b class="less">less important</b> para2_3</p><p>the last one</p></body>', 'test test xml');
-    my ($para_el) = $body->children->first->as_xml_libxml;
-    isa_ok($para_el, 'XML::LibXML::Element', 'first <p>');
+    is($body->single->as_string, '<body><p>para1</p><p>para2 <b>important</b> para2_2 <b class="less">less important</b> para2_3</p><p>the last one</p></body>', 'test test xml');
+    isa_ok($body->children->first->single->as_xml_libxml, 'XML::LibXML::Element', 'first <p>');
 
     is($body->root->find('//b')->count, 2, 'two <b> tags');
     is($body->root->find('//p/b[@class="less"]')->text_content, 'less important', q{find('//p/b[@class="less"]')});

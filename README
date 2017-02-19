@@ -5,6 +5,8 @@ NAME
 SYNOPSIS
 
         use XML::Chain qw(xc);
+    
+        # basics
         my $div = xc('div', class => 'pretty')
                     ->c('h1')->t('hello')
                     ->up
@@ -23,77 +25,29 @@ EXPORTS
 
  xc
 
-    A factory method creating new XML::Chain object with a document element
-    as provided in parameters. For example:
+    Exported factory method creating new XML::Chain::Selector object with a
+    document element as provided in parameters. For example:
 
         my $icon = xc('i', class => 'icon-download icon-white');
         # <i class="icon-download icon-white"/>
 
-    See "c, append_and_current" for the element parameter description.
+    See "c, append_and_current" in XML::Chain::Selector for the element
+    parameter description and "CHAINED METHODS" in XML::Chain::Selector for
+    methods of returned object.
 
-CHAINED METHODS
+CONTRIBUTORS & CREDITS
 
- c, append_and_current
+    Initially inspired by Strophe.Builder, then also by jQuery.
 
-    Appends new element to current elements and changes context to them.
-    New element is defined in parameters:
-
-        $xc->c('i', class => 'icon-download icon-white')
-        # <i class="icon-download icon-white"/>
-
-    First parameter is name of the element, then followed by optional
-    element attributes.
-
- t, append_text
-
-    Appends text to current elements.
-
-        xc('span')->t('some')->t(' ')->t('more text')
-        # <span>some more text</span>
-
-    First parameter is name of the element, then followed by optional
-    element attributes.
-
- root
-
-    Sets document element as current element.
-
-        say xc('p')
-            ->t('this ')
-            ->c('b')
-                ->t('is')->up
-            ->t(' important!')
-            ->root->as_string;
-        # <p>this <b>is</b> important!</p>
-
- up, parent
-
-    Traverse current elements and replace them by their parents.
-
-METHODS
-
- as_string, toString
-
-    Returns string representation of current XML elements. Call root before
-    to get a string representing the whole document.
-
-        $xc->as_string
-        $xc->root->as_string
-
-    XML::Chain uses overloading, so string interpolation also works:
-
-        my $xc = xc('overload');
-        say "$xc";
-        # <overload/>
-
-CONTRIBUTORS
-
-    The following people have contributed to the Sys::Path by committing
+    The following people have contributed to the XML::Chain by committing
     their code, sending patches, reporting bugs, asking questions,
     suggesting useful advice, nitpicking, chatting on IRC or commenting on
     my blog (in no particular order):
 
+        Mohammad S Anwar
         you?
+
+    Also thanks to my current day-job-employer http://geizhals.at/.
 
 BUGS
 
@@ -106,7 +60,7 @@ AUTHOR
 
 COPYRIGHT & LICENSE
 
-    Copyright 2009 Jozef Kutej, all rights reserved.
+    Copyright 2017 Jozef Kutej, all rights reserved.
 
     This program is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself.

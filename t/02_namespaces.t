@@ -20,11 +20,8 @@ subtest 'default namespace' => sub {
                 ->root;
     is($body->as_string, '<body xmlns="'.$xhtml_xmlns.'"><p>para</p></body>', 'root element with default namespace');
 
-    my ($body_el) = $body->first->as_xml_libxml;
-    is($body_el->namespaceURI,$xhtml_xmlns,'body has default namespace');
-
-    my ($para_el) = $body->children->first->as_xml_libxml;
-    is($para_el->namespaceURI,$xhtml_xmlns,'child has default namespace');
+    is($body->first->single->as_xml_libxml->namespaceURI,$xhtml_xmlns,'body has default namespace');
+    is($body->children->first->single->as_xml_libxml->namespaceURI,$xhtml_xmlns,'child has default namespace');
 };
 
 

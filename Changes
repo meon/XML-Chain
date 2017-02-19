@@ -1,8 +1,9 @@
 0.02  2017-XX-XX
     - namespaces support
-    - chained methods reworked into selectors
+    - chained methods reworked into selectors (XML::Chain::Selector)
     - add find($xpath) method
-    - first version of auto_indent(1) using XML::Tidy
+    - first version of auto_indent(1) using XML::Tidy (don't use in persistent env)
+    - add single() method (XML::Chain::Element)
 
 0.01  2017-01-18
     - initial prototype version
