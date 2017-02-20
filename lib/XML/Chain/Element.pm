@@ -11,47 +11,16 @@ use Moose;
 use MooseX::Aliases;
 use Carp qw(croak);
 
-use overload '""' => \&as_string, fallback => 1;
+extends qw(XML::Chain::Selector);
+
+use overload '""' => \&XML::Chain::Selector::as_string, fallback => 1;
 
 has '_xc_el_data' => (is => 'ro', isa => 'HashRef',    required => 1);
 has '_xc'         => (is => 'rw', isa => 'XML::Chain', required => 1);
 
-my @selector_methods = qw(
-    c append_and_current
-    t append_text
-    up parent
-    root document_element
-    find
-    children
-    first
-    auto_indent
-    toString as_string
-    text_content
-    size count
-    single
-);
-
-my $meta = __PACKAGE__->meta;
-
-# generate selector methods
-foreach my $sel_method (@selector_methods) {
-    $meta->add_method(
-        $sel_method => sub {
-            my ($self, @attrs) = @_;
-            $self->_selector->$sel_method(@attrs);
-        }
-    );
-}
-
 sub as_xml_libxml {return $_[0]->{_xc_el_data}->{lxml};}
 
-sub _selector {
-    my ($self) = @_;
-    return XML::Chain::Selector->new(
-        current_elements => [$self->{_xc_el_data}],
-        _xc              => $self->{_xc},
-    );
-}
+sub current_elements {return [$_[0]->_xc_el_data];}
 
 1;
 
