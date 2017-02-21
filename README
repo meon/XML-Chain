@@ -35,6 +35,63 @@ EXPORTS
     parameter description and "CHAINED METHODS" in XML::Chain::Selector for
     methods of returned object.
 
+  xc($name, @attrs) scalar with 1+ arguments
+
+    Element with $name will be create as document element and  @attrs  will
+    be added to it in the same order.
+
+    In case of hash reference passed as argument, key + values will be set
+    as attributes, in alphabetical sorted key name order.
+
+  xc($xml_libxml_ref)
+
+    In case of XML::LibXML, it will be set as document element.
+
+  xc($what_ref)
+
+    Any other reference will be passed to "slurp($what)" in IO::Any which
+    will be then parsed by "load_xml" in XML::LibXML and result set as
+    document element.
+
+        say xc([$tmp_dir, 't01.xml'])->as_string
+        say xc(\'<body><h1>and</h1><h1>head</h1></body>')
+                ->find('//h1')->count
+
+  xc($scalar)
+
+    Element with $scalar will be create as document element.
+
+        say xc('body');
+
+CHAINED METHODS, METHODS and ELEMENT METHODS
+
+    See XML::Chain::Selector and XML::Chain::Element.
+
+CHAINED DOCUMENT METHODS
+
+        xc('body')->t('save me')->set_io_any([$tmp_dir, 't01.xml'])->store;
+        # $tmp_dir/t01.xml file no consists of:
+            <body>save me</body>
+        xc([$tmp_dir, 't01.xml'])->empty->c('div')->t('updated')->store;
+        # $tmp_dir/t01.xml file no consists of:
+            <body><div>updated</div></body>
+
+ set_io_any
+
+    Store  $what  of IO::Any for future use with  -store() >
+
+ store
+
+    Calls  IO::Any-spew($io_any, $self->as_string, {atomic => 1}) > to save
+    XML back it it's original file of the the target set via set_io_any.
+
+TODO
+
+        - partial/special tidy (on elements inside xml)
+        - per ->data() storage
+        - setting and handling namespaces and elements with ns prefixes
+        - ~ton of selectors and manipulators to be added
+
 CONTRIBUTORS & CREDITS
 
     Initially inspired by Strophe.Builder, then also by jQuery.

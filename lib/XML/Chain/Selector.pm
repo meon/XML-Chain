@@ -136,6 +136,19 @@ sub auto_indent {
     return $self;
 }
 
+sub empty {
+    my ($self) = @_;
+
+    $self->_cur_el_iterrate(
+        sub {
+            my ($el) = @_;
+            $el->{lxml}->removeChildNodes;
+        }
+    );
+
+    return $self;
+}
+
 ### methods
 
 alias toString => 'as_string';
@@ -205,6 +218,9 @@ sub count {
     $self->_cur_el_iterrate(sub {$count++});
     return $count;
 }
+
+sub store      {$_[0]->{_xc}->store}
+sub set_io_any {$_[0]->{_xc}->set_io_any($_[1])}
 
 sub single {
     my ($self) = @_;
@@ -330,6 +346,10 @@ Set all current elements child nodes as current elements.
 
 Set first current elements as current elements.
 
+=head2 empty
+
+Removes all child nodes from current elements.
+
 =head2 auto_indent
 
     my $simple = xc('div')
@@ -353,13 +373,17 @@ be four spaces.
 
 NOTE Currently works only on element on which C<as_string()> is called
      using L<HTML::Tidy>.
-     In the future it is planned to be possible to set idendentation
-     on/off also for nested elements. For example not to indend embedded
+     In the future it is planned to be possible to set indentation
+     on/off also for nested elements. For example not to indent embedded
      html elements.
 
 WARNING L<HTML::Tidy> has a circular reference and leaks memory when used.
-        Better don't use auto_indent() at in this version in persistant
+        Better don't use auto_indent() at in this version in persistent
         environments.
+
+=head1 CHAINED DOCUMENT METHODS
+
+See L<XML::Chain/CHAINED DOCUMENT METHODS>.
 
 =head1 METHODS
 

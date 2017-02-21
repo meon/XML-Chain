@@ -11,12 +11,15 @@ my $builder = Module::Build->new(
         'Module::Build' => '0.36',
     },
     build_requires => {
-        'Test::Most' => 0,
+        'Test::Most'  => 0,
+        'File::Temp'  => 0,
+        'Path::Class' => 0,
     },
     requires => {
         'perl'            => 5.010,
         'XML::LibXML'     => 0,
         'XML::Tidy'       => 0,
+        'IO::Any'         => 0,
         'Moose'           => 0,
         'MooseX::Aliases' => 0,
         'Moose::Exporter' => 0,

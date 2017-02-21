@@ -6,22 +6,35 @@ use utf8;
 
 use open ':std', ':encoding(utf8)';
 use Test::Most;
+use File::Temp qw(tempdir);
+use Path::Class qw(dir file);
 
 use FindBin qw($Bin);
 use lib "$Bin/lib";
 
 use XML::Chain qw(xc);
 
+my $tmp_dir = dir(tempdir( CLEANUP => 1 ));
+
 subtest 'xc()' => sub {
     my $body = xc('body');
     isa_ok($body, 'XML::Chain::Element', 'xc(exported) returns element');
     is($body->as_string, '<body/>', 'create an element');
 
-    cmp_ok($body->as_string, 'eq', $body->toString, 'toString alias to as_string');
+    my $body_class = xc('body', {'data-a' => 'b', class => 'myClass'});
+    is($body_class->as_string, '<body class="myClass" data-a="b"/>', 'create an element with hash attribute');
+    my $body_class2 = xc('body', class => 'myClass', onLoad => 'alert("yay!")');
+    is($body_class2->as_string, '<body class="myClass" onLoad="alert(&quot;yay!&quot;)"/>', 'create an element with sorted attributes');
+    my $load_file = xc([$Bin, 'tdata', '01_basics.xml']);
+    is($load_file->as_string, '<hello><world/></hello>', 'create from file (IO::Any)');
 
     my $h1 = $body->c('h1')->t('I am heading');
     isa_ok($h1,'XML::Chain::Selector','$h1 → selector on traversal');
     is($body->as_string, '<body><h1>I am heading</h1></body>', 'selector create an element');
+
+    is(xc(\'<body><h1>and</h1><h1>head</h1></body>')->find('//h1')->count, 2, '=head3 xc($what_ref); -> parsing xml strings');
+
+    cmp_ok($body->as_string, 'eq', $body->toString, 'toString alias to as_string');
 };
 
 subtest 'basic creation' => sub {
@@ -72,5 +85,13 @@ subtest 'navigation' => sub {
     is($body->root->find('/body/p[position() = last()]')->text_content, 'the last one', q{find('/body/p[position() = last()]')});
 };
 
+subtest 'store' => sub {
+    my $tmp_file = $tmp_dir->file('t01.xml');
+    xc('body')->t('save me')->set_io_any([$tmp_dir, 't01.xml'])->store;
+    is(xc($tmp_file)->text_content, 'save me', '=head1 CHAINED DOCUMENT METHODS; ->store() and load via file');
+
+    xc($tmp_file)->empty->c('div')->t('updated')->store;
+    is($tmp_file->slurp.'', '<body><div>updated</div></body>', 'load & ->store() via file');
+};
 
 done_testing;

@@ -11,6 +11,7 @@ add_stopwords(qw(
         API
         JSON
         TBD
+        TODO
         html
         RT
         CPAN
@@ -22,6 +23,8 @@ add_stopwords(qw(
         chainable
         toString
         xc
+        jQuery
+        xpath
         )
 );
 all_pod_files_spelling_ok();

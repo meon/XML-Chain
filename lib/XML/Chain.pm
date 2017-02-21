@@ -12,6 +12,7 @@ use XML::Chain::Selector;
 use XML::Chain::Element;
 use Carp qw(croak);
 use Scalar::Util qw(blessed);
+use IO::Any;
 use Moose;
 use Moose::Exporter;
 Moose::Exporter->setup_import_methods(as_is => ['xc'],);
@@ -30,13 +31,45 @@ sub _build_dom {
 }
 
 sub xc {
-    my ($el_name, @attrs) = @_;
+    my ($el_name_object, @attrs) = @_;
 
     my $self = __PACKAGE__->new();
 
-    my $ns_uri = {@attrs}->{xmlns} // '';
+    if (@attrs == 1) {
+        my $hash_attrs = $attrs[0];
+        croak 'with two argument second argument must be hashref'
+            unless ref($hash_attrs) eq 'HASH';
+        @attrs = map { $_ => $hash_attrs->{$_} } sort keys %$hash_attrs;
+    }
 
-    my $initial_el = $self->_create_element($el_name, $ns_uri, @attrs);
+    my $initial_el;
+    if (@attrs) {
+        my $ns_uri = {@attrs}->{xmlns} // '';
+        $initial_el = $self->_create_element($el_name_object, $ns_uri, @attrs);
+    }
+    elsif (blessed($el_name_object) && $el_name_object->isa('XML::LibXML::Node')) {
+        $initial_el = $self->_xc_el_data($el_name_object);
+        $self->dom->setDocumentElement($initial_el->{lxml});
+        return $self->document_element;
+    }
+    elsif (blessed($el_name_object) && $el_name_object->isa('XML::LibXML::Document')) {
+        $initial_el = $self->_xc_el_data($el_name_object->documentElement);
+        $self->dom($el_name_object);
+        return $self->document_element;
+    }
+    elsif (ref($el_name_object)) {
+        $self->set_io_any($el_name_object);
+        my $dom = XML::LibXML->load_xml(
+            string => IO::Any->slurp($el_name_object),
+        );
+        $initial_el = $self->_xc_el_data($dom->documentElement);
+        $self->dom($dom);
+        return $self->document_element;
+    }
+    else {
+        $initial_el = $self->_create_element($el_name_object, '');
+    }
+
     $self->dom->setDocumentElement($initial_el->{lxml});
     return $self->document_element;
 }
@@ -75,6 +108,20 @@ sub document_element {
         _xc_el_data => $self->_xc_el_data($self->_lxml_document_element),
         _xc         => $self,
     );
+}
+
+sub store {
+    my ($self) = @_;
+    my $io_any = $self->{io_any};
+    croak 'io_any was not set' unless $io_any;
+    IO::Any->spew($io_any, $self->document_element->as_string, {atomic => 1});
+    return $self;
+}
+
+sub set_io_any {
+    my ($self, $to_set) = @_;
+    $self->{io_any} = $to_set;
+    return $self;
 }
 
 1;
@@ -119,6 +166,63 @@ a document element as provided in parameters. For example:
 See L<XML::Chain::Selector/c, append_and_current> for the element parameter
 description and L<XML::Chain::Selector/CHAINED METHODS> for methods of
 returned object.
+
+=head3 xc($name, @attrs) scalar with 1+ arguments
+
+Element with C<$name> will be create as document element and C< @attrs >
+will be added to it in the same order.
+
+In case of hash reference passed as argument, key + values will be set
+as attributes, in alphabetical sorted key name order.
+
+=head3 xc($xml_libxml_ref)
+
+In case of XML::LibXML, it will be set as document element.
+
+=head3 xc($what_ref)
+
+Any other reference will be passed to L<IO::Any/slurp($what)> which will
+be then parsed by L<XML::LibXML/load_xml> and result set as document element.
+
+    say xc([$tmp_dir, 't01.xml'])->as_string
+    say xc(\'<body><h1>and</h1><h1>head</h1></body>')
+            ->find('//h1')->count
+
+=head3 xc($scalar)
+
+Element with C<$scalar> will be create as document element.
+
+    say xc('body');
+
+=head1 CHAINED METHODS, METHODS and ELEMENT METHODS
+
+See L<XML::Chain::Selector> and L<XML::Chain::Element>.
+
+=head1 CHAINED DOCUMENT METHODS
+
+    xc('body')->t('save me')->set_io_any([$tmp_dir, 't01.xml'])->store;
+    # $tmp_dir/t01.xml file no consists of:
+        <body>save me</body>
+    xc([$tmp_dir, 't01.xml'])->empty->c('div')->t('updated')->store;
+    # $tmp_dir/t01.xml file no consists of:
+        <body><div>updated</div></body>
+
+=head2 set_io_any
+
+Store C< $what > of L<IO::Any> for future use with C< ->store() >
+
+=head2 store
+
+Calls C< IO::Any->spew($io_any, $self->as_string, {atomic => 1}) > to
+save XML back it it's original file of the the target set via
+C<set_io_any>.
+
+=head1 TODO
+
+    - partial/special tidy (on elements inside xml)
+    - per ->data() storage
+    - setting and handling namespaces and elements with ns prefixes
+    - ~ton of selectors and manipulators to be added
 
 =head1 CONTRIBUTORS & CREDITS
 
