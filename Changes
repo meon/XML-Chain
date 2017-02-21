@@ -1,3 +1,6 @@
+0.03  2017-XX-XX
+    -
+
 0.02  2017-02-21
     - namespaces support
     - chained methods reworked into selectors (XML::Chain::Selector)
