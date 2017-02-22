@@ -72,7 +72,7 @@ subtest 'navigation' => sub {
                     ->t('para2 ')
                     ->c('b')->t('important')->up
                     ->t(' para2_2 ')
-                    ->c('b', class => 'less')->t('less important')->up
+                    ->append_and_select('b', class => 'less')->t('less important')->up
                     ->t(' para2_3')
                     ->up
                 ->c('p')->t('the last one')

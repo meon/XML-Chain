@@ -20,9 +20,10 @@ use overload '""' => \&as_string, fallback => 1;
 
 ### chained methods
 
-alias c => 'append_and_current';
+alias c => 'append_and_select';
+alias append_and_current => 'append_and_select';    # name until <= 0.02
 
-sub append_and_current {
+sub append_and_select {
     my ($self, $el_name, @attrs) = @_;
 
     my $attrs_ns_uri = {@attrs}->{xmlns};
@@ -295,7 +296,7 @@ Will print:
 
 =head1 CHAINED METHODS
 
-=head2 c, append_and_current
+=head2 c, append_and_select
 
 Appends new element to current elements and changes context to them. New
 element is defined in parameters:
