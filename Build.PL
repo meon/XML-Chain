@@ -17,7 +17,7 @@ my $builder = Module::Build->new(
     },
     requires => {
         'perl'            => 5.010,
-        'XML::LibXML'     => 0,
+        'XML::LibXML'     => 2.0100,   # Added the unique_key() method to XML::LibXML::Node
         'XML::Tidy'       => 0,
         'IO::Any'         => 0,
         'Moose'           => 0,
