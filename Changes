@@ -1,6 +1,6 @@
 0.03  2017-XX-XX
     - s/append_and_current/append_and_select/
-
+    - add append() method
 
 0.02  2017-02-21
     - namespaces support

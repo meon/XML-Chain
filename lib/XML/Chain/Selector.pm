@@ -33,14 +33,23 @@ sub append_and_select {
                 sub {
                     my ($el) = @_;
                     my $ns_uri = $attrs_ns_uri // $el->{ns};
-                    my $child_el = $self->{_xc}
+                    my $child_elements = $self->{_xc}
                         ->_create_element($el_name, $ns_uri, @attrs);
-                    $el->{lxml}->appendChild($child_el->{lxml});
-                    return $child_el;
+                    foreach my $child_el (@$child_elements) {
+                        $el->{lxml}->appendChild($child_el->{lxml});
+                    }
+                    return @$child_elements;
                 }
             )
         ]
     );
+}
+
+alias a => 'append';
+
+sub append {
+    my ($self, $el_name, @attrs) = @_;
+    return $self->append_and_select($el_name, @attrs)->parent;
 }
 
 alias t => 'append_text';
@@ -247,6 +256,18 @@ sub _new_related {
     my ($self, $current_elements) = @_;
     croak 'need array ref a argument'
         unless ref($current_elements) eq 'ARRAY';
+
+    return XML::Chain::Element->new(
+        _xc_el_data => $current_elements->[0],
+        _xc         => $self->{_xc},
+    ) if @$current_elements == 1;
+
+    # make current_elements uniq
+    my %uniq_eid;
+    $current_elements =
+        [grep {$uniq_eid{$_->{eid}} ? 0 : ($uniq_eid{$_->{eid}} = 1)}
+            @$current_elements];
+
     return __PACKAGE__->new(
         current_elements => $current_elements,
         _xc              => $self->{_xc},
@@ -266,16 +287,15 @@ XML::Chain::Selector - selector for traversing the XML::Chain
 =head1 SYNOPSIS
 
     my $user = xc('user', xmlns => 'testns')
-                ->auto_indent(1)
-                ->c('name')->t('Johnny Thinker')->up
-                ->c('username')->t('jt')->up
+                ->auto_indent({chars=>' 'x4})
+                ->a(xc('name')->t('Johnny Thinker'))
+                ->a(xc('username')->t('jt'))
                 ->c('bio')
-                    ->c('div', xmlns => 'http://www.w3.org/1999/xhtml')
-                        ->c('h1')->t('about')->up
-                        ->c('p')->t('...')->up
-                    ->up
-                ->c('greeting')->t('Hey')
-                ->root;
+                    ->a(xc('div', xmlns => 'http://www.w3.org/1999/xhtml')
+                        ->a(xc('h1')->t('about'))
+                        ->a(xc('p')->t('...')))
+                    ->a(xc('greeting')->t('Hey'))
+                    ->up;
     say $user->as_string;
 
 Will print:
@@ -323,8 +343,7 @@ Sets document element as current element.
 
     say xc('p')
         ->t('this ')
-        ->c('b')
-            ->t('is')->up
+        ->a(xc('b')->t('is'))
         ->t(' important!')
         ->root->as_string;
     # <p>this <b>is</b> important!</p>

@@ -35,6 +35,17 @@ sub xc {
 
     my $self = __PACKAGE__->new();
 
+    my $initial_el = $self->_create_element($el_name_object, undef, @attrs);
+    confess 'document creation must be from single element'
+        unless @$initial_el == 1;
+
+    $self->dom->setDocumentElement($initial_el->[0]->{lxml});
+    return $self->document_element;
+}
+
+sub _create_element {
+    my ($self, $el_name_object, $ns, @attrs) = @_;
+
     if (@attrs == 1) {
         my $hash_attrs = $attrs[0];
         croak 'with two argument second argument must be hashref'
@@ -42,47 +53,47 @@ sub xc {
         @attrs = map { $_ => $hash_attrs->{$_} } sort keys %$hash_attrs;
     }
 
-    my $initial_el;
+    $ns //= {@attrs}->{xmlns} // '';
+
+    my @create_elements;
     if (@attrs) {
-        my $ns_uri = {@attrs}->{xmlns} // '';
-        $initial_el = $self->_create_element($el_name_object, $ns_uri, @attrs);
+        # lxml create
     }
-    elsif (blessed($el_name_object) && $el_name_object->isa('XML::LibXML::Node')) {
-        $initial_el = $self->_xc_el_data($el_name_object);
-        $self->dom->setDocumentElement($initial_el->{lxml});
-        return $self->document_element;
-    }
-    elsif (blessed($el_name_object) && $el_name_object->isa('XML::LibXML::Document')) {
-        $initial_el = $self->_xc_el_data($el_name_object->documentElement);
-        $self->dom($el_name_object);
-        return $self->document_element;
-    }
-    elsif (ref($el_name_object)) {
-        $self->set_io_any($el_name_object);
-        my $dom = XML::LibXML->load_xml(
-            string => IO::Any->slurp($el_name_object),
-        );
-        $initial_el = $self->_xc_el_data($dom->documentElement);
-        $self->dom($dom);
-        return $self->document_element;
+    if (ref($el_name_object)) {
+        if (blessed($el_name_object)) {
+            if ($el_name_object->isa('XML::Chain::Selector')) {
+                @create_elements = @{$el_name_object->current_elements};
+            }
+            if ($el_name_object->isa('XML::LibXML::Node')) {
+                @create_elements = $self->_xc_el_data($el_name_object);
+            }
+            elsif ($el_name_object->isa('XML::LibXML::Document')) {
+                @create_elements = $self->_xc_el_data($el_name_object->documentElement);
+            }
+        }
+
+        unless (@create_elements) {
+            $self->set_io_any($el_name_object);
+            my $dom = XML::LibXML->load_xml(
+                string => IO::Any->slurp($el_name_object),
+            );
+            @create_elements = $self->_xc_el_data($dom->documentElement);
+        }
     }
     else {
-        $initial_el = $self->_create_element($el_name_object, '');
+        # lxml create
     }
 
-    $self->dom->setDocumentElement($initial_el->{lxml});
-    return $self->document_element;
-}
-
-sub _create_element {
-    my ($self, $el_name, $ns, @attrs) = @_;
-
-    my $new_element = $self->dom->createElementNS($ns, $el_name);
-    while (my $attr_name = shift(@attrs)) {
-        my $attr_value = shift(@attrs);
-        $new_element->setAttribute($attr_name => $attr_value);
+    unless (@create_elements) {
+        my $new_element = $self->dom->createElementNS($ns, $el_name_object);
+        while (my $attr_name = shift(@attrs)) {
+            my $attr_value = shift(@attrs);
+            $new_element->setAttribute($attr_name => $attr_value);
+        }
+        @create_elements = $self->_xc_el_data($new_element);
     }
-    return $self->_xc_el_data($new_element);
+
+    return \@create_elements;
 }
 
 sub _xc_el_data {
@@ -91,8 +102,9 @@ sub _xc_el_data {
 
     my $eid = $el->unique_key;
     return $self->{_xc_el_data}->{$eid} //= {
-        ns => $el->namespaceURI // '',
+        eid  => $eid,
         lxml => $el,
+        ns   => ($el->namespaceURI // ''),
     };
 }
 

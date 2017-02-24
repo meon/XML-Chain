@@ -22,16 +22,15 @@ subtest 'auto indent (synopsis of XML::Chain::Selector)' => sub {
     # namespaces && auto indentation
     my $user = xc('user', xmlns => 'testns')
                 ->auto_indent({chars=>' 'x4})
-                ->c('name')->t('Johnny Thinker')->up
-                ->c('username')->t('jt')->up
+                ->a(xc('name')->t('Johnny Thinker'))
+                ->a(xc('username')->t('jt'))
                 ->c('bio')
-                    ->c('div', xmlns => 'http://www.w3.org/1999/xhtml')
-                        ->c('h1')->t('about')->up
-                        ->c('p')->t('...')->up
-                    ->up
-                ->c('greeting')->t('Hey')
-                ->root;
-    eq_or_diff_text($user->as_string, user_as_string(), 'auto indented user');
+                    ->a(xc('div', xmlns => 'http://www.w3.org/1999/xhtml')
+                        ->a(xc('h1')->t('about'))
+                        ->a(xc('p')->t('...')))
+                    ->a(xc('greeting')->t('Hey'))
+                    ->up;
+    eq_or_diff_text($user->as_string, user_as_string(), '=head1 SYNOPSIS; auto indented user');
 };
 
 

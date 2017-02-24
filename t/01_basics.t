@@ -54,10 +54,14 @@ subtest 'basic creation' => sub {
     my $over_el = xc('overload');
     is("$over_el", '<overload/>', '=head2 as_string; sample');
 
+    my $append_xc = xc('body')
+        ->a(xc('p')->t(1))
+        ->a(xc('p2')->t(2));
+    is($append_xc->as_string, '<body><p>1</p><p2>2</p2></body>', 'append xc()');
+
     my $head2_root = xc('p')
         ->t('this ')
-        ->c('b')
-            ->t('is')->up
+        ->a(xc('b')->t('is'))
         ->t(' important!')
         ->root->as_string;
     is($head2_root, '<p>this <b>is</b> important!</p>', '=head2 root; sample');
@@ -68,21 +72,31 @@ subtest 'basic creation' => sub {
 subtest 'navigation' => sub {
     my $body = xc('body')
                 ->c('p')->t('para1')->up
-                ->c('p')
+                ->append_and_select('p')
                     ->t('para2 ')
-                    ->c('b')->t('important')->up
+                    ->a(xc('b')->t('important'))
                     ->t(' para2_2 ')
-                    ->append_and_select('b', class => 'less')->t('less important')->up
+                    ->append(xc('b', class => 'less')->t('less important'))
                     ->t(' para2_3')
                     ->up
                 ->c('p')->t('the last one')
                 ->root;
-    is($body->single->as_string, '<body><p>para1</p><p>para2 <b>important</b> para2_2 <b class="less">less important</b> para2_3</p><p>the last one</p></body>', 'test test xml');
+    is($body->as_string, '<body><p>para1</p><p>para2 <b>important</b> para2_2 <b class="less">less important</b> para2_3</p><p>the last one</p></body>', 'test test xml');
     isa_ok($body->children->first->single->as_xml_libxml, 'XML::LibXML::Element', 'first <p>');
 
-    is($body->root->find('//b')->count, 2, 'two <b> tags');
-    is($body->root->find('//p/b[@class="less"]')->text_content, 'less important', q{find('//p/b[@class="less"]')});
-    is($body->root->find('/body/p[position() = last()]')->text_content, 'the last one', q{find('/body/p[position() = last()]')});
+    is($body->find('//b')->count, 2, 'two <b> tags');
+    is($body->find('//p/b[@class="less"]')->text_content, 'less important', q{find('//p/b[@class="less"]')});
+    is($body->find('/body/p[position() = last()]')->text_content, 'the last one', q{find('/body/p[position() = last()]')});
+};
+
+subtest 'copy elements between documents' => sub {
+    my $body = xc('body')
+        ->a('p', class => '1')
+        ->a('p', class => '2');
+    my $new_body = xc('body')
+        ->a(xc('div')->a($body->find('/body/p')))
+        ->a(xc('div')->t('second div'));
+    is($new_body->single->as_string, '<body><div><p class="1"/><p class="2"/></div><div>second div</div></body>', 'test test xml inside divs');
 };
 
 subtest 'store' => sub {
