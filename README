@@ -10,9 +10,11 @@ SYNOPSIS
         my $div = xc('div', class => 'pretty')
                     ->c('h1')->t('hello')
                     ->up
-                    ->c('p', class => 'intro')->t('world!');
+                    ->c('p', class => 'intro')->t('world')
+                    ->root
+                    ->a( xc('p')->t('of chained XML.') );
         say $div->as_string;
-        # <div class="pretty"><h1>hello</h1><p class="intro">world!</p></div>
+        # <div class="pretty"><h1>hello</h1><p class="intro">world</p><p>of chained XML.</p></div>
 
 DESCRIPTION
 
@@ -70,10 +72,10 @@ CHAINED METHODS, METHODS and ELEMENT METHODS
 CHAINED DOCUMENT METHODS
 
         xc('body')->t('save me')->set_io_any([$tmp_dir, 't01.xml'])->store;
-        # $tmp_dir/t01.xml file no consists of:
+        # $tmp_dir/t01.xml file now consists of:
             <body>save me</body>
         xc([$tmp_dir, 't01.xml'])->empty->c('div')->t('updated')->store;
-        # $tmp_dir/t01.xml file no consists of:
+        # $tmp_dir/t01.xml file now consists of:
             <body><div>updated</div></body>
 
  set_io_any
@@ -89,6 +91,7 @@ TODO
 
         - partial/special tidy (on elements inside xml)
         - per ->data() storage
+        - ->each(sub {...}) / ->map(sub {}) / ->grep(sub {})
         - setting and handling namespaces and elements with ns prefixes
         - ~ton of selectors and manipulators to be added
 
@@ -110,6 +113,210 @@ BUGS
 
     Please report any bugs or feature requests via
     https://github.com/meon/XML-Chain/issues.
+
+AUTHOR
+
+    Jozef Kutej
+
+COPYRIGHT & LICENSE
+
+    Copyright 2017 Jozef Kutej, all rights reserved.
+
+    This program is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself.
+
+
+----------------------------------------------------------------------------
+NAME
+
+    XML::Chain::Selector - selector for traversing the XML::Chain
+
+SYNOPSIS
+
+        my $user = xc('user', xmlns => 'testns')
+                    ->auto_indent({chars=>' 'x4})
+                    ->a(xc('name')->t('Johnny Thinker'))
+                    ->a(xc('username')->t('jt'))
+                    ->c('bio')
+                        ->a(xc('div', xmlns => 'http://www.w3.org/1999/xhtml')
+                            ->a(xc('h1')->t('about'))
+                            ->a(xc('p')->t('...')))
+                        ->a(xc('greeting')->t('Hey'))
+                        ->up;
+        say $user->as_string;
+
+    Will print:
+
+        <user xmlns="testns">
+            <name>Johnny Thinker</name>
+            <username>jt</username>
+            <bio>
+                <div xmlns="http://www.w3.org/1999/xhtml">
+                    <h1>about</h1>
+                    <p>...</p>
+                </div>
+                <greeting>Hey</greeting>
+            </bio>
+        </user>
+
+DESCRIPTION
+
+CHAINED METHODS
+
+ c, append_and_select
+
+    Appends new element to current elements and changes context to them.
+    New element is defined in parameters:
+
+        $xc->c('i', class => 'icon-download icon-white')
+        # <i class="icon-download icon-white"/>
+
+    First parameter is name of the element, then followed by optional
+    element attributes.
+
+ t, append_text
+
+    Appends text to current elements.
+
+        xc('span')->t('some')->t(' ')->t('more text')
+        # <span>some more text</span>
+
+    First parameter is name of the element, then followed by optional
+    element attributes.
+
+ root
+
+    Sets document element as current element.
+
+        say xc('p')
+            ->t('this ')
+            ->a(xc('b')->t('is'))
+            ->t(' important!')
+            ->root->as_string;
+        # <p>this <b>is</b> important!</p>
+
+ up, parent
+
+    Traverse current elements and replace them by their parents.
+
+ find
+
+        say $xc->find('//p/b[@class="less"]')->text_content;
+
+    Look-up elements by xpath and set them as current elements.
+
+ children
+
+    Set all current elements child nodes as current elements.
+
+ first
+
+    Set first current elements as current elements.
+
+ empty
+
+    Removes all child nodes from current elements.
+
+ auto_indent
+
+        my $simple = xc('div')
+                        ->auto_indent(1)
+                        ->c('div')->t('in')
+                        ->root;
+        say $simple->as_string;
+
+    Will print:
+
+        <div>
+            <div>in</div>
+        </div>
+
+    Turn on/off tidy/auto-indentation of document elements. Default
+    indentation characters are tabs.
+
+    Argument can be either true/false scalar or a hashref with indentation
+    options. Currently	{chars=' 'x4} > will set indentation characters to
+    be four spaces.
+
+    NOTE Currently works only on element on which as_string() is called
+    using HTML::Tidy. In the future it is planned to be possible to set
+    indentation on/off also for nested elements. For example not to indent
+    embedded html elements.
+
+    WARNING HTML::Tidy has a circular reference and leaks memory when used.
+    Better don't use auto_indent() at in this version in persistent
+    environments.
+
+CHAINED DOCUMENT METHODS
+
+    See "CHAINED DOCUMENT METHODS" in XML::Chain.
+
+METHODS
+
+ as_string, toString
+
+    Returns string representation of current XML elements. Call root before
+    to get a string representing the whole document.
+
+        $xc->as_string
+        $xc->root->as_string
+
+ as_xml_libxml
+
+    Returns array of current elements as XML::LibXML objects.
+
+ text_content
+
+    Returns text content of all current XML elements.
+
+ count / size
+
+        say $xc->find('//b')->count;
+
+    Return the number of current elements.
+
+ single
+
+        my $lxml_el = $xc->find('//b')->first->as_xml_libxml;
+
+    Checks is there is exactly one element in current elements and return
+    it as XML::Chain::Element object.
+
+AUTHOR
+
+    Jozef Kutej
+
+COPYRIGHT & LICENSE
+
+    Copyright 2017 Jozef Kutej, all rights reserved.
+
+    This program is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself.
+
+
+----------------------------------------------------------------------------
+NAME
+
+    XML::Chain::Element - helper class for XML::Chain representing single
+    element
+
+SYNOPSIS
+
+        xc('body')->c(h1)->t('title')->root
+
+DESCRIPTION
+
+    Returned by "single" in XML::Chain::Selector call.
+
+METHODS
+
+ as_xml_libxml
+
+    Returns XML::LibXML::Element object.
+
+ XML::Chain::Selector methods
+
+    All of the XML::Chain::Selector methods works too.
 
 AUTHOR
 

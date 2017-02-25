@@ -73,7 +73,7 @@ sub _create_element {
         }
 
         unless (@create_elements) {
-            $self->set_io_any($el_name_object);
+            $self->{io_any} = $el_name_object;
             my $dom = XML::LibXML->load_xml(
                 string => IO::Any->slurp($el_name_object),
             );
@@ -127,13 +127,13 @@ sub store {
     my $io_any = $self->{io_any};
     croak 'io_any was not set' unless $io_any;
     IO::Any->spew($io_any, $self->document_element->as_string, {atomic => 1});
-    return $self;
+    return $self->document_element;
 }
 
 sub set_io_any {
     my ($self, $to_set) = @_;
     $self->{io_any} = $to_set;
-    return $self;
+    return $self->document_element;
 }
 
 1;
@@ -154,9 +154,11 @@ XML::Chain - chained way of manipulating and inspecting XML documents
     my $div = xc('div', class => 'pretty')
                 ->c('h1')->t('hello')
                 ->up
-                ->c('p', class => 'intro')->t('world!');
+                ->c('p', class => 'intro')->t('world')
+                ->root
+                ->a( xc('p')->t('of chained XML.') );
     say $div->as_string;
-    # <div class="pretty"><h1>hello</h1><p class="intro">world!</p></div>
+    # <div class="pretty"><h1>hello</h1><p class="intro">world</p><p>of chained XML.</p></div>
 
 =head1 DESCRIPTION
 
@@ -213,10 +215,10 @@ See L<XML::Chain::Selector> and L<XML::Chain::Element>.
 =head1 CHAINED DOCUMENT METHODS
 
     xc('body')->t('save me')->set_io_any([$tmp_dir, 't01.xml'])->store;
-    # $tmp_dir/t01.xml file no consists of:
+    # $tmp_dir/t01.xml file now consists of:
         <body>save me</body>
     xc([$tmp_dir, 't01.xml'])->empty->c('div')->t('updated')->store;
-    # $tmp_dir/t01.xml file no consists of:
+    # $tmp_dir/t01.xml file now consists of:
         <body><div>updated</div></body>
 
 =head2 set_io_any
@@ -233,6 +235,7 @@ C<set_io_any>.
 
     - partial/special tidy (on elements inside xml)
     - per ->data() storage
+    - ->each(sub {...}) / ->map(sub {}) / ->grep(sub {})
     - setting and handling namespaces and elements with ns prefixes
     - ~ton of selectors and manipulators to be added
 

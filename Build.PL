@@ -2,7 +2,34 @@ use strict;
 use warnings;
 use Module::Build;
 
-my $builder = Module::Build->new(
+my $mb_subclass = Module::Build->subclass(
+    class => 'XML::Chain::MB_Builder',
+    code  => q{
+        use Path::Class qw(file);
+        use Pod::Simple::Text;
+
+        sub create_readme {
+            my @readmes;
+            my @lib_files = qw(
+                lib/XML/Chain.pm
+                lib/XML/Chain/Selector.pm
+                lib/XML/Chain/Element.pm
+            );
+            foreach my $file (@lib_files) {
+                my $pst = Pod::Simple::Text->new;
+                my $readme = '';
+                $pst->output_string(\$readme);
+                $pst->parse_file($file);
+                push(@readmes, $readme);
+            }
+            file('README')->spew(join("\n".('-'x76)."\n", @readmes));
+
+            return;
+        }
+    },
+);
+
+my $builder = $mb_subclass->new(
     module_name       => 'XML-Chain',
     license           => 'perl',
     dist_author       => 'Jozef Kutej <jkutej@cpan.org>',
@@ -11,9 +38,10 @@ my $builder = Module::Build->new(
         'Module::Build' => '0.36',
     },
     build_requires => {
-        'Test::Most'  => 0,
-        'File::Temp'  => 0,
-        'Path::Class' => 0,
+        'Test::Most'        => 0,
+        'File::Temp'        => 0,
+        'Path::Class'       => 0,
+        'Pod::Simple::Text' => 0,
     },
     requires => {
         'perl'            => 5.010,
