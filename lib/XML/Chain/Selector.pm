@@ -159,6 +159,109 @@ sub empty {
     return $self;
 }
 
+sub rename {
+    my ($self, $new_name) = @_;
+    croak 'need new name ' unless defined($new_name);
+
+    $self->_cur_el_iterrate(
+        sub {
+            my ($el) = @_;
+            $el->{lxml}->setNodeName($new_name);
+        }
+    );
+
+    return $self;
+}
+
+sub each {
+    my ($self, $code_ref) = @_;
+    croak 'need new code ref ' if ref($code_ref) ne 'CODE';
+
+    $self->_cur_el_iterrate(
+        sub {
+            my ($el) = @_;
+            $_ = XML::Chain::Element->new(
+                _xc_el_data => $el,
+                _xc         => $self->{_xc},
+            );
+            $code_ref->();
+        }
+    );
+
+    return $self;
+}
+
+sub remap {
+    my ($self, $code_ref) = @_;
+    croak 'need new code ref ' if ref($code_ref) ne 'CODE';
+
+    return $self->_new_related([
+        $self->_cur_el_iterrate(
+            sub {
+                my ($el) = @_;
+                my $el_xc = XML::Chain::Element->new(
+                    _xc_el_data => $el,
+                    _xc         => $self->{_xc},
+                );
+                local $_ = $el_xc;
+                my @new_elements = $code_ref->();
+
+                # element removed
+                if (!defined($new_elements[0])) {
+                    $el_xc->rm;
+                    return;
+                }
+
+                @new_elements = map {
+                    croak 'must return isa XML::Chain::Selector'
+                        unless $_->isa('XML::Chain::Selector');
+                    @{$_->current_elements}
+                } @new_elements;
+
+                # element removed
+                if (@new_elements == 0) {
+                    $el_xc->rm;
+                    return;
+                }
+
+                # if changed, replace first new element with the old one
+                if ($new_elements[0]->{eid} != $el->{eid}) {
+                    $el->{lxml}->replaceNode($new_elements[0]->{lxml});
+                    $el = $new_elements[0];
+                }
+                # add all the rest after
+                my $i = 1;
+                while ($i < @new_elements) {
+                    $el->{lxml}->parentNode->insertAfter($new_elements[$i]->{lxml},$new_elements[$i-1]->{lxml});
+                    $i++;
+                }
+
+                return @new_elements;
+            }
+        )
+    ]);
+
+    return $self;
+}
+
+alias rm => 'remove_and_parent';
+
+sub remove_and_parent {
+    my ($self) = @_;
+
+    my $parent = $self->parent;
+    $self->_cur_el_iterrate(
+        sub {
+            my ($el) = @_;
+            $el->{deleted} = 1;
+            $el->{lxml}->parentNode->removeChild($el->{lxml});
+            $el->{lxml} = undef;
+        }
+    );
+
+    return $parent;
+}
+
 ### methods
 
 alias toString => 'as_string';
@@ -249,12 +352,12 @@ sub single {
 sub _cur_el_iterrate {
     my ($self, $code_ref) = @_;
     croak 'need code ref a argument' unless ref($code_ref) eq 'CODE';
-    return map {$code_ref->($_)} @{$self->current_elements};
+    return map {$code_ref->($_) if !$_->{deleted}} @{$self->current_elements};
 }
 
 sub _new_related {
     my ($self, $current_elements) = @_;
-    croak 'need array ref a argument'
+    croak 'need array ref as argument'
         unless ref($current_elements) eq 'ARRAY';
 
     return XML::Chain::Element->new(
@@ -369,6 +472,52 @@ Set first current elements as current elements.
 =head2 empty
 
 Removes all child nodes from current elements.
+
+=head2 rename
+
+    my $body = xc('bodyz')->rename('body');
+    # <body/>
+
+Rename node name(s).
+
+=head2 each
+
+    # rename using each
+    $body->rename('body');
+    $body
+        ->a(xc('p.1')->t(1))
+        ->a(xc('p.2')->t(2))
+        ->a(xc('div')->t(3))
+        ->a(xc('p.3')->t(4))
+        ->each(sub { $_->rename('p') if $_->name =~ m/^p[.]/ });
+    is($body, '<body><p>1</p><p>2</p><div>3</div><p>4</p></body>','rename using each()');
+
+Loops through all selected elements and calls callback for each of them.
+
+=head2 remap
+
+    xc('body')->a('p', i => 1)->children->remap(
+        sub {
+            (map {xc('e', i => $_)} 1 .. 3), $_;
+        }
+    )->root;
+    # <body><e i="1"/><e i="2"/><e i="3"/><p i="1"/></body>
+
+Replaces all selected elements by callback returned elements.
+
+=head2 rm, remove_and_parent
+
+    my $pdiv = xc('base')
+            ->a(xc('p')->t(1))
+            ->a(xc('p')->t(2))
+            ->a(xc('div')->t(3))
+            ->a(xc('p')->t(4));
+    my $p = $pdiv->find('//p');
+    # $pdiv->find('//p[position()=3]')->rm->name eq 'base'
+    # $p->count == 2     # deleted elements are skipped also in old selectors
+    # <base><p>1</p><p>2</p><div>3</div></base>
+
+Deletes current elements and returnes their parent.
 
 =head2 auto_indent
 

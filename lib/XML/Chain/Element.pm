@@ -18,8 +18,8 @@ use overload '""' => \&XML::Chain::Selector::as_string, fallback => 1;
 has '_xc_el_data' => (is => 'ro', isa => 'HashRef',    required => 1);
 has '_xc'         => (is => 'rw', isa => 'XML::Chain', required => 1);
 
-sub as_xml_libxml {return $_[0]->{_xc_el_data}->{lxml};}
-
+sub as_xml_libxml    {return $_[0]->{_xc_el_data}->{lxml};}
+sub name             {return $_[0]->{_xc_el_data}->{lxml}->nodeName;}
 sub current_elements {return [$_[0]->_xc_el_data];}
 
 1;
@@ -41,6 +41,10 @@ XML::Chain::Element - helper class for XML::Chain representing single element
 Returned by L<XML::Chain::Selector/single> call.
 
 =head1 METHODS
+
+=head2 name
+
+return element name
 
 =head2 as_xml_libxml
 

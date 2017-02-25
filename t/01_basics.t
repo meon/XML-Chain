@@ -34,7 +34,7 @@ subtest 'xc()' => sub {
     is("$over_el", '<overload/>', '=head2 as_string; sample');
 };
 
-subtest 'basic creation' => sub {
+subtest 'basic creation / removal' => sub {
     my $body = xc('body');
     my $h1 = $body->c('h1')->t('I am heading');
     isa_ok($h1,'XML::Chain::Selector','$h1 → selector on traversal');
@@ -64,10 +64,20 @@ subtest 'basic creation' => sub {
         ->t('this ')
         ->a(xc('b')->t('is'))
         ->t(' important!')
-        ->root->as_string;
+        ->root;
     is($head2_root, '<p>this <b>is</b> important!</p>', '=head2 root; sample');
+    $head2_root->find('//b')->rename('i');
+    is($head2_root, '<p>this <i>is</i> important!</p>', 'rename()');
 
-    return;
+    my $pdiv = xc('base')
+            ->a(xc('p')->t(1))
+            ->a(xc('p')->t(2))
+            ->a(xc('div')->t(3))
+            ->a(xc('p')->t(4));
+    my $p = $pdiv->find('//p');
+    is($pdiv->find('//p[position()=3]')->rm->name,'base','=head2 rm, remove_and_parent; rm() element, parent is base');
+    is($p->count,2,'rm() element, 2 left in selection constructed before');
+    is($pdiv, '<base><p>1</p><p>2</p><div>3</div></base>');
 };
 
 subtest 'navigation' => sub {
@@ -99,6 +109,59 @@ subtest 'copy elements between documents' => sub {
         ->a(xc('div')->a($body->find('/body/p')))
         ->a(xc('div')->t('second div'));
     is($new_body->single->as_string, '<body><div><p class="1"/><p class="2"/></div><div>second div</div></body>', 'test test xml inside divs');
+};
+
+subtest 'loop over elements, rename' => sub {
+    my $body = xc('bodyz');
+    is($body, '<bodyz/>','rename()');
+
+    $body->rename('body');
+    $body
+        ->a(xc('p.1')->t(1))
+        ->a(xc('p.2')->t(2))
+        ->a(xc('div')->t(3))
+        ->a(xc('p.3')->t(4))
+        ->children->each(sub { $_->rename('p') if $_->name =~ m/^p[.]/ });
+    is($body, '<body><p>1</p><p>2</p><div>3</div><p>4</p></body>','=head2 each; rename using each()');
+
+    my $remap = xc('body')->a('p', i => 1);
+    is( $remap->children->remap(
+            sub {
+                (map {xc('e', i => $_)} 1 .. 3), $_;
+            }
+            )->root,
+        '<body><e i="1"/><e i="2"/><e i="3"/><p i="1"/></body>',
+        '=head2 remap; add +3 elements'
+    );
+    is( $remap->find('//e[position()=2]')->remap(
+            sub {
+                xc('p', i=>4),
+                xc('p', i=>5),
+            }
+            )->root,
+        '<body><e i="1"/><p i="4"/><p i="5"/><e i="3"/><p i="1"/></body>',
+        'replace element'
+    );
+    is( $remap->find('//e[@i="2"] | //p[@i="5"]')->remap(sub { })->root,
+        '<body><e i="1"/><p i="4"/><e i="3"/><p i="1"/></body>',
+        'remove elements'
+    );
+
+    my $remap2 = xc(\'<body><p>1</p><p>2</p><div>3</div><p>4</p></body>');
+    $remap2->children->remap(sub {(
+        ($_->name eq 'div')
+        ? xc('p')->t($_->text_content)         # replace <div> for <p>
+        : $_->text_content eq '2'
+        ? (                                    # replace node with text "2" for 3x <div>
+            xc('div')->t(2),
+            xc('div')->t(21),
+            xc('div')->t(22),
+        )
+        : $_->text_content eq '4'
+        ? undef                                # delete <p> with text "4"
+        : $_                                   # first <p> kept
+    )});
+    is($remap2, '<body><p>1</p><div>2</div><div>21</div><div>22</div><p>3</p></body>','replace and delete element via remap()');
 };
 
 subtest 'store' => sub {
