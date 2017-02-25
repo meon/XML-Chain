@@ -217,6 +217,53 @@ CHAINED METHODS
 
     Removes all child nodes from current elements.
 
+ rename
+
+        my $body = xc('bodyz')->rename('body');
+        # <body/>
+
+    Rename node name(s).
+
+ each
+
+        # rename using each
+        $body->rename('body');
+        $body
+            ->a(xc('p.1')->t(1))
+            ->a(xc('p.2')->t(2))
+            ->a(xc('div')->t(3))
+            ->a(xc('p.3')->t(4))
+            ->each(sub { $_->rename('p') if $_->name =~ m/^p[.]/ });
+        is($body, '<body><p>1</p><p>2</p><div>3</div><p>4</p></body>','rename using each()');
+
+    Loops through all selected elements and calls callback for each of
+    them.
+
+ remap
+
+        xc('body')->a('p', i => 1)->children->remap(
+            sub {
+                (map {xc('e', i => $_)} 1 .. 3), $_;
+            }
+        )->root;
+        # <body><e i="1"/><e i="2"/><e i="3"/><p i="1"/></body>
+
+    Replaces all selected elements by callback returned elements.
+
+ rm, remove_and_parent
+
+        my $pdiv = xc('base')
+                ->a(xc('p')->t(1))
+                ->a(xc('p')->t(2))
+                ->a(xc('div')->t(3))
+                ->a(xc('p')->t(4));
+        my $p = $pdiv->find('//p');
+        # $pdiv->find('//p[position()=3]')->rm->name eq 'base'
+        # $p->count == 2     # deleted elements are skipped also in old selectors
+        # <base><p>1</p><p>2</p><div>3</div></base>
+
+    Deletes current elements and returnes their parent.
+
  auto_indent
 
         my $simple = xc('div')
@@ -309,6 +356,10 @@ DESCRIPTION
     Returned by "single" in XML::Chain::Selector call.
 
 METHODS
+
+ name
+
+    return element name
 
  as_xml_libxml
 
