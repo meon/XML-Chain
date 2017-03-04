@@ -1,4 +1,4 @@
-0.03  2017-XX-XX
+0.03  2017-03-04
     - s/append_and_current/append_and_select/
     - add append() method
     - add name() method
