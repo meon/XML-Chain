@@ -162,6 +162,17 @@ subtest 'loop over elements, rename' => sub {
         : $_                                   # first <p> kept
     )});
     is($remap2, '<body><p>1</p><div>2</div><div>21</div><div>22</div><p>3</p></body>','replace and delete element via remap()');
+
+    wrap_element: {
+        local $TODO = 'wrap element';
+        my $i = 5;
+        is(
+            xc('body')->a('p1')->a('p2')->children->remap(
+                sub { xc('div'.$i++)->a($_) }
+            )->root,
+            '<body><div5><p1/></div5><div6><p2/></div6></body>',
+        );
+    };
 };
 
 subtest 'store' => sub {
