@@ -187,4 +187,13 @@ subtest 'store' => sub {
     is($tmp_file->slurp.'', '<body><div>updated</div></body>', 'load & ->store() via file');
 };
 
+subtest 'element attributes' => sub {
+    my $body = xc(\'<body><img/></body>');
+    $body->children->attr('href' => '#', 'title' => '');
+    is($body->as_string, '<body><img href="#" title=""/></body>', '->attr() setter');
+    is($body->children->attr('href'), '#', '->attr() getter');
+    $body->children->attr('title' => undef);
+    is($body->as_string, '<body><img href="#"/></body>', '->attr() remove');
+};
+
 done_testing;

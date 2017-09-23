@@ -262,6 +262,42 @@ sub remove_and_parent {
     return $parent;
 }
 
+sub attr {
+    my ($self, @attrs) = @_;
+
+    croak 'need new attribute name ' unless @attrs;
+
+    # getter
+    if (@attrs == 1) {
+        my $attr_name = $attrs[0];
+        my @attribute_values;
+        $self->_cur_el_iterrate(
+            sub {
+                my ($el) = @_;
+                push(@attribute_values, $el->{lxml}->getAttribute($attr_name));
+            }
+        );
+        return (@attribute_values == 1 ? $attribute_values[0] : @attribute_values);
+    }
+
+    # setter
+    while (my ($attr_name, $attr_value) = splice(@attrs,0,2)) {
+        $self->_cur_el_iterrate(
+            sub {
+                my ($el) = @_;
+                if (defined($attr_value)) {
+                    $el->{lxml}->setAttribute($attr_name => $attr_value);
+                }
+                else {
+                    $el->{lxml}->removeAttribute($attr_name);
+                }
+            }
+        );
+    }
+
+    return $self;
+}
+
 ### methods
 
 alias toString => 'as_string';
@@ -479,6 +515,21 @@ Removes all child nodes from current elements.
     # <body/>
 
 Rename node name(s).
+
+=head2 attr
+
+    my $img = xc('img')->attr('href' => '#', 'title' => 'imaget');
+    # <img href="#" title="imaget"/>
+
+    say $img->attr('title')
+    # imaget
+
+    say $img->attr('title' => undef)
+    # <img href="#"/>
+
+Get or set elements attributes. With one argument returns attribute value
+otherwise sets them. Setting attribute to C<undef> will remove it from
+the element.
 
 =head2 each
 
