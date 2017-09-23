@@ -32,6 +32,9 @@ subtest 'xc()' => sub {
 
     my $over_el = xc('overload');
     is("$over_el", '<overload/>', '=head2 as_string; sample');
+
+    my $xml_doc = XML::LibXML->load_xml(string => '<xml-doc><el/></xml-doc>');
+    is(xc($xml_doc)->as_string, '<xml-doc><el/></xml-doc>', 'xc(XML::LibXML::Document->new())');
 };
 
 subtest 'basic creation / removal' => sub {

@@ -64,11 +64,11 @@ sub _create_element {
             if ($el_name_object->isa('XML::Chain::Selector')) {
                 @create_elements = @{$el_name_object->current_elements};
             }
-            if ($el_name_object->isa('XML::LibXML::Node')) {
-                @create_elements = $self->_xc_el_data($el_name_object);
-            }
             elsif ($el_name_object->isa('XML::LibXML::Document')) {
                 @create_elements = $self->_xc_el_data($el_name_object->documentElement);
+            }
+            elsif ($el_name_object->isa('XML::LibXML::Node')) {
+                @create_elements = $self->_xc_el_data($el_name_object);
             }
         }
 
