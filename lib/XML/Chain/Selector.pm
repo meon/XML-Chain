@@ -91,24 +91,29 @@ sub document_element {
 }
 
 sub find {
-    my ($self, $xpath) = @_;
+    my ($self, $xpath, @namespaces) = @_;
     croak 'need xpath as argument' unless defined($xpath);
 
     my $xpc = XML::LibXML::XPathContext->new();
-    return $self->_new_related(
-        [   $self->_cur_el_iterrate(
-                sub {
-                    my ($el) = @_;
-                    my $lxml_el = $el->{lxml};
-                    return
-                        map {$self->{_xc}->_xc_el_data($_)}
-                        $xpc->findnodes($xpath, $lxml_el);
-                }
-            )
-        ]
-    );
-
-    return $self;
+    while (@namespaces) {
+        $xpc->registerNs(splice(@namespaces, 0, 2))
+    }
+    my $new_self = eval {
+        $self->_new_related(
+            [   $self->_cur_el_iterrate(
+                    sub {
+                        my ($el) = @_;
+                        my $lxml_el = $el->{lxml};
+                        return
+                            map {$self->{_xc}->_xc_el_data($_)}
+                            $xpc->findnodes($xpath, $lxml_el);
+                    }
+                )
+            ]
+        );
+    };
+    croak $@ if $@;
+    return $new_self;
 }
 
 sub children {
@@ -383,6 +388,12 @@ sub single {
     );
 }
 
+sub reg_global_ns {
+    my ($self, $ns_prefix, $ns_uri, $activate) = @_;
+    $self->root->as_xml_libxml->setNamespace($ns_uri, $ns_prefix, ($activate // 0));
+    return $self;
+}
+
 ### helpers
 
 sub _cur_el_iterrate {
@@ -494,8 +505,11 @@ Traverse current elements and replace them by their parents.
 =head2 find
 
     say $xc->find('//p/b[@class="less"]')->text_content;
+    say $xc->find('//xhtml:div', xhtml => 'http://www.w3.org/1999/xhtml')->count;
 
-Look-up elements by xpath and set them as current elements.
+Look-up elements by xpath and set them as current elements. Optional
+look-up namespace prefixes can be specified. Any global registered
+namespace prefixes L</reg_global_ns> can be used.
 
 =head2 children
 
@@ -635,6 +649,13 @@ Return the number of current elements.
 
 Checks is there is exactly one element in current elements and return it
 as L<XML::Chain::Element> object.
+
+=head2 reg_global_ns
+
+    $sitemap->reg_global_ns('i' => 'http://www.google.com/schemas/sitemap-image/1.1');
+    $sitemap->reg_global_ns('s' => 'http://www.sitemaps.org/schemas/sitemap/0.9');
+    say $sitemap->find('/s:urlset/s:url/i:image')->count
+    # 2
 
 =head1 AUTHOR
 
