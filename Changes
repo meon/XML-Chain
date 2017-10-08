@@ -1,6 +1,7 @@
 0.04  2017-XX-XX
     - fix xc(XML::LibXML::Document->new()) case
     - add attr() method
+    - "-" (minus) as attribute name in element constructor means to set text of the element
 
 0.03  2017-03-04
     - s/append_and_current/append_and_select/

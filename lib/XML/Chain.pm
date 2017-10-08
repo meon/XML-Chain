@@ -10,11 +10,12 @@ our $VERSION = '0.04';
 use XML::LibXML;
 use XML::Chain::Selector;
 use XML::Chain::Element;
-use Carp qw(croak);
+use Carp qw(croak confess);
 use Scalar::Util qw(blessed);
 use IO::Any;
 use Moose;
 use Moose::Exporter;
+use Try::Tiny;
 Moose::Exporter->setup_import_methods(as_is => ['xc'],);
 
 has 'dom' => (is => 'rw', isa => 'XML::LibXML::Document', lazy_build => 1);
@@ -86,9 +87,22 @@ sub _create_element {
 
     unless (@create_elements) {
         my $new_element = $self->dom->createElementNS($ns, $el_name_object);
-        while (my $attr_name = shift(@attrs)) {
+        while (@attrs) {
+            my $attr_name  = shift(@attrs);
             my $attr_value = shift(@attrs);
-            $new_element->setAttribute($attr_name => $attr_value);
+            next unless defined($attr_name);
+            next unless defined($attr_value);
+            if ($attr_name eq '-') {
+                $new_element->appendText($attr_value);
+            }
+            else {
+                try {
+                    $new_element->setAttribute($attr_name => $attr_value);
+                }
+                catch {
+                    confess 'failed to set attribute "'.$attr_name.'" on "'.$el_name_object.'" - '.$_;
+                };
+            }
         }
         @create_elements = $self->_xc_el_data($new_element);
     }
@@ -160,9 +174,28 @@ XML::Chain - chained way of manipulating and inspecting XML documents
     say $div->as_string;
     # <div class="pretty"><h1>hello</h1><p class="intro">world</p><p>of chained XML.</p></div>
 
-=head1 DESCRIPTION
+    my $sitemap =
+        xc('urlset', xmlns => 'http://www.sitemaps.org/schemas/sitemap/0.9')
+        ->t("\n")
+        ->c('url')
+            ->a('loc',        '-' => 'https://metacpan.org/pod/XML::Chain::Selector')
+            ->a('lastmod',    '-' => DateTime->from_epoch(epoch => 1507451828)->strftime('%Y-%m-%d'))
+            ->a('changefreq', '-' => 'monthly')
+            ->a('priority',   '-' => '0.6')
+        ->up->t("\n")
+        ->c('url')
+            ->a('loc',        '-' => 'https://metacpan.org/pod/XML::Chain::Element')
+            ->a('lastmod',    '-' => DateTime->from_epoch(epoch => 1507279028)->strftime('%Y-%m-%d'))
+            ->a('changefreq', '-' => 'monthly')
+            ->a('priority',   '-' => '0.5')
+        ->up->t("\n");
+    say $sitemap->as_string;
+    # <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    # <url><loc>https://metacpan.org/pod/XML::Chain::Selector</loc><lastmod>2017-10-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>
+    # <url><loc>https://metacpan.org/pod/XML::Chain::Element</loc><lastmod>2017-10-06</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>
+    # </urlset>
 
-☢ at this moment L<XML::Chain> is in early prototype phase ☢
+=head1 DESCRIPTION
 
 This module provides fast and easy way to create and manipulate XML elements
 via set of chained method calls.
@@ -188,6 +221,9 @@ will be added to it in the same order.
 
 In case of hash reference passed as argument, key + values will be set
 as attributes, in alphabetical sorted key name order.
+
+Attribute name "-" is a special case and the value will used for text
+content inside the element.
 
 =head3 xc($xml_libxml_ref)
 
