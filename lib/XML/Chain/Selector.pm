@@ -582,7 +582,7 @@ Replaces all selected elements by callback returned elements.
     # $p->count == 2     # deleted elements are skipped also in old selectors
     # <base><p>1</p><p>2</p><div>3</div></base>
 
-Deletes current elements and returnes their parent.
+Deletes current elements and returns their parent.
 
 =head2 auto_indent
 
