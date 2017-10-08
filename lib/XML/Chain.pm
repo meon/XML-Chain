@@ -259,7 +259,7 @@ See L<XML::Chain::Selector> and L<XML::Chain::Element>.
 
 =head2 set_io_any
 
-Store C< $what > of L<IO::Any> for future use with C< ->store() >
+Store C< $what > of L<IO::Any> for future use with C< -E<gt>store() >
 
 =head2 store
 
