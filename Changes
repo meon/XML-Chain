@@ -1,3 +1,6 @@
+0.05  2017-XX-XX
+    - 
+
 0.04  2017-10-08
     - fix xc(XML::LibXML::Document->new()) case
     - add attr() method
