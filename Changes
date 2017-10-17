@@ -1,5 +1,5 @@
 0.05  2017-XX-XX
-    - 
+    - set_io_any() accepts second argument, IO::Any options
 
 0.04  2017-10-08
     - fix xc(XML::LibXML::Document->new()) case

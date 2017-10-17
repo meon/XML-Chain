@@ -374,7 +374,7 @@ sub count {
 }
 
 sub store      {$_[0]->{_xc}->store}
-sub set_io_any {$_[0]->{_xc}->set_io_any($_[1])}
+sub set_io_any {$_[0]->{_xc}->set_io_any($_[1], $_[2])}
 
 sub single {
     my ($self) = @_;
