@@ -1,5 +1,5 @@
-0.06  2017-XX-XX
-    -
+0.06  2017-11-21
+    - fix configure_requires dependency, thanks Slaven Rezic (RT127733)
 
 0.05  2017-10-17
     - set_io_any() accepts second argument, IO::Any options

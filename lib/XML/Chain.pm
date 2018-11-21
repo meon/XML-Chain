@@ -287,6 +287,7 @@ code, sending patches, reporting bugs, asking questions, suggesting useful
 advice, nitpicking, chatting on IRC or commenting on my blog (in no particular
 order):
 
+    Slaven Rezic
     Vienna.pm (for listening to my talk and providing valuable feedback)
     Mohammad S Anwar
     you?
