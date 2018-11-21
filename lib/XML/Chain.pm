@@ -266,7 +266,7 @@ Store C< $what , $options > of L<IO::Any> for future use with C< -E<gt>store() >
 
 =head2 store
 
-Calls C< IO::Any->spew($io_any, $self->as_string, {atomic => 1}) > to
+Calls C<< IO::Any->spew($io_any, $self->as_string, {atomic => 1}) >> to
 save XML back it it's original file of the the target set via
 C<set_io_any>.
 
