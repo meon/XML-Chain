@@ -206,19 +206,20 @@ via set of chained method calls.
 
 =head2 xc
 
-Exported factory method creating new L<XML::Chain::Selector> object with
+Exported factory method creating new L<XML::Chain::Element> object with
 a document element as provided in parameters. For example:
 
     my $icon = xc('i', class => 'icon-download icon-white');
     # <i class="icon-download icon-white"/>
 
-See L<XML::Chain::Selector/c, append_and_current> for the element parameter
+See also L<XML::Chain::Selector/c, append_and_current>, from which
+L<XML::Chain::Element> inherits all methods, for the element parameter
 description and L<XML::Chain::Selector/CHAINED METHODS> for methods of
 returned object.
 
-=head3 xc($name, @attrs) scalar with 1+ arguments
+=head3 xc($el_name, @attrs) scalar with 1+ arguments
 
-Element with C<$name> will be create as document element and C< @attrs >
+Element with C<$el_name> will be create as document element and C< @attrs >
 will be added to it in the same order.
 
 In case of hash reference passed as argument, key + values will be set
