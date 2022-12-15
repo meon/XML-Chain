@@ -28,6 +28,16 @@ sub append_and_select {
 
     my $attrs_ns_uri = {@attrs}->{xmlns};
 
+    # get ns from ns-prefix if present
+    unless (defined($attrs_ns_uri)) {
+        my @el_name_parts = split(':', $el_name, 2);
+        if (@el_name_parts > 1) {
+            my $ns_prefix;
+            ($ns_prefix, undef) = @el_name_parts;
+            $attrs_ns_uri = $self->{_xc}->dom->documentElement->getAttribute('xmlns:' . $ns_prefix);
+        }
+    }
+
     return $self->_new_related(
         [   $self->_cur_el_iterrate(
                 sub {

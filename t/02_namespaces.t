@@ -51,4 +51,32 @@ subtest 'element namespaces' => sub {
     );
 };
 
+subtest 'create document with 2 namespaces' => sub {
+    my $feed = xc(
+        'feed',
+        'xmlns'         => 'http://www.w3.org/2005/Atom',
+        'xmlns:media' => 'http://search.yahoo.com/mrss/',
+        'xml:lang'    => 'en-US'
+    )->t("\n");
+    my $item = $feed->c('entry')->t("\n");
+    $item->a('id', '-' => 'http://blog.kutej.net/2022/12/')->t("\n");
+    $item->a(
+        'media:thumbnail',
+        width  => '30',
+        height => '30',
+        url    => 'http://blog.kutej.net/static/img/bulk-discount.jpg'
+    )->t("\n");
+
+    eq_or_diff($feed->as_string, ns_document(), 'namespace elements');
+};
+
 done_testing;
+
+sub ns_document {
+    return
+q{<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" xml:lang="en-US">
+<entry>
+<id>http://blog.kutej.net/2022/12/</id>
+<media:thumbnail height="30" url="http://blog.kutej.net/static/img/bulk-discount.jpg" width="30"></media:thumbnail>
+</entry></feed>};
+}

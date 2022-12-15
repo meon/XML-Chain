@@ -92,6 +92,7 @@ sub _create_element {
             my $attr_value = shift(@attrs);
             next unless defined($attr_name);
             next unless defined($attr_value);
+            next if $attr_name eq 'xmlns';
             if ($attr_name eq '-') {
                 $new_element->appendText($attr_value);
             }

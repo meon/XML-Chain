@@ -1,5 +1,6 @@
 0.07  2018-XX-XX
-    -
+    - xml namespaces handling when creating elements with ns prefixes
+    - xmlns attribute present only when needed
 
 0.06  2018-11-21
     - fix configure_requires dependency, thanks Slaven Rezic (RT127733)
