@@ -36,11 +36,16 @@ sub xc {
 
     my $self = __PACKAGE__->new();
 
-    my $initial_el = $self->_create_element($el_name_object, undef, @attrs);
-    confess 'document creation must be from single element'
-        unless @$initial_el == 1;
+    if (blessed($el_name_object) && $el_name_object->isa('XML::LibXML::Document')) {
+        $self->dom($el_name_object);
+    }
+    else {
+        my $initial_el = $self->_create_element($el_name_object, undef, @attrs);
+        confess 'document creation must be from single element'
+            unless @$initial_el == 1;
+        $self->dom->setDocumentElement($initial_el->[0]->{lxml});
+    }
 
-    $self->dom->setDocumentElement($initial_el->[0]->{lxml});
     return $self->document_element;
 }
 
