@@ -63,7 +63,7 @@ sub _create_element {
 
     my @create_elements;
     if (@attrs) {
-        # lxml create
+        # Create a LibXML element.
     }
     if (ref($el_name_object)) {
         if (blessed($el_name_object)) {
@@ -87,7 +87,7 @@ sub _create_element {
         }
     }
     else {
-        # lxml create
+        # Create a LibXML element.
     }
 
     unless (@create_elements) {
@@ -166,7 +166,7 @@ __END__
 
 =head1 NAME
 
-XML::Chain - chained way of manipulating and inspecting XML documents
+XML::Chain - a chained way of manipulating and inspecting XML documents
 
 =head1 SYNOPSIS
 
@@ -205,43 +205,61 @@ XML::Chain - chained way of manipulating and inspecting XML documents
 
 =head1 DESCRIPTION
 
-This module provides fast and easy way to create and manipulate XML elements
-via set of chained method calls.
+This module provides a fast and easy way to create and manipulate XML
+elements via a set of chained method calls.
 
 =head1 EXPORTS
 
 =head2 xc
 
-Exported factory method creating new L<XML::Chain::Element> object with
-a document element as provided in parameters. For example:
+Exported factory method that creates a new L<XML::Chain::Element> object
+with the document element provided in the parameters. For example:
 
     my $icon = xc('i', class => 'icon-download icon-white');
     # <i class="icon-download icon-white"/>
 
 See also L<XML::Chain::Selector/c, append_and_current>, from which
 L<XML::Chain::Element> inherits all methods, for the element parameter
-description and L<XML::Chain::Selector/CHAINED METHODS> for methods of
-returned object.
+description, and L<XML::Chain::Selector/CHAINED METHODS> for methods on
+the returned object.
+
+In practice, C<xc()> accepts four input categories: a scalar element
+name, an XML::LibXML document or node, an existing selector/element, or
+some other reference that L<IO::Any> can read and L<XML::LibXML> can
+parse.
 
 =head3 xc($el_name, @attrs) scalar with 1+ arguments
 
-Element with C<$el_name> will be create as document element and C< @attrs >
-will be added to it in the same order.
+An element with C<$el_name> will be created as the document element, and
+C<@attrs> will be added to it in the same order.
 
-In case of hash reference passed as argument, key + values will be set
-as attributes, in alphabetical sorted key name order.
+If a hash reference is passed as an argument, its keys and values will be
+set as attributes in alphabetical key order.
 
-Attribute name "-" is a special case and the value will used for text
-content inside the element.
+The attribute name "-" is a special case, and the value will be used for
+text content inside the element.
 
 =head3 xc($xml_libxml_ref)
 
-In case of XML::LibXML, it will be set as document element.
+Accepted XML::LibXML object types are:
+
+=over 4
+
+=item * L<XML::LibXML::Document>
+
+The document is used directly.
+
+=item * L<XML::LibXML::Node>
+
+The node is used as the document element.
+
+=back
 
 =head3 xc($what_ref)
 
-Any other reference will be passed to L<IO::Any/slurp($what)> which will
-be then parsed by L<XML::LibXML/load_xml> and result set as document element.
+Any other reference will be passed to L<IO::Any/slurp($what)>, then
+parsed by L<XML::LibXML/load_xml>, and the result will be set as the
+document element.
 
     say xc([$tmp_dir, 't01.xml'])->as_string
     say xc(\'<body><h1>and</h1><h1>head</h1></body>')
@@ -249,7 +267,7 @@ be then parsed by L<XML::LibXML/load_xml> and result set as document element.
 
 =head3 xc($scalar)
 
-Element with C<$scalar> will be create as document element.
+An element with C<$scalar> will be created as the document element.
 
     say xc('body');
 
@@ -268,13 +286,12 @@ See L<XML::Chain::Selector> and L<XML::Chain::Element>.
 
 =head2 set_io_any
 
-Store C< $what , $options > of L<IO::Any> for future use with C< -E<gt>store() >
+Stores C<$what, $options> for L<IO::Any> for future use with C<< ->store() >>.
 
 =head2 store
 
 Calls C<< IO::Any->spew($io_any, $self->as_string, {atomic => 1}) >> to
-save XML back it it's original file of the the target set via
-C<set_io_any>.
+save XML back to the target configured via C<set_io_any>.
 
 =head1 TODO
 
@@ -288,7 +305,7 @@ C<set_io_any>.
 
 Initially inspired by Strophe.Builder, then also by jQuery.
 
-The following people have contributed to the XML::Chain by committing their
+The following people have contributed to XML::Chain by committing their
 code, sending patches, reporting bugs, asking questions, suggesting useful
 advice, nitpicking, chatting on IRC or commenting on my blog (in no particular
 order):
@@ -296,9 +313,10 @@ order):
     Slaven Rezic
     Vienna.pm (for listening to my talk and providing valuable feedback)
     Mohammad S Anwar
+    AI
     you?
 
-Also thanks to my current day-job-employer L<http://geizhals.at/>.
+Also thanks to L<https://geizhals.at/>, L<https://www.riedellskates.eu/> and L<https://apa.at/>.
 
 =head1 BUGS
 

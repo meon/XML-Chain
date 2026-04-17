@@ -28,7 +28,7 @@ sub append_and_select {
 
     my $attrs_ns_uri = {@attrs}->{xmlns};
 
-    # get ns from ns-prefix if present
+    # Get the namespace from the prefix if present.
     unless (defined($attrs_ns_uri)) {
         my @el_name_parts = split(':', $el_name, 2);
         if (@el_name_parts > 1) {
@@ -154,7 +154,7 @@ sub first {
 
 sub auto_indent {
     my ($self, $set_to) = @_;
-    croak 'need true/false/options for auto indentation ' if @_ < 2;
+    croak 'need true/false/options for auto indentation' if @_ < 2;
 
     $self->_cur_el_iterrate(sub {$_[0]->{auto_indent} = $set_to});
 
@@ -176,7 +176,7 @@ sub empty {
 
 sub rename {
     my ($self, $new_name) = @_;
-    croak 'need new name ' unless defined($new_name);
+    croak 'need a new name' unless defined($new_name);
 
     $self->_cur_el_iterrate(
         sub {
@@ -190,7 +190,7 @@ sub rename {
 
 sub each {
     my ($self, $code_ref) = @_;
-    croak 'need new code ref ' if ref($code_ref) ne 'CODE';
+    croak 'need a code ref' if ref($code_ref) ne 'CODE';
 
     $self->_cur_el_iterrate(
         sub {
@@ -208,7 +208,7 @@ sub each {
 
 sub remap {
     my ($self, $code_ref) = @_;
-    croak 'need new code ref ' if ref($code_ref) ne 'CODE';
+    croak 'need a code ref' if ref($code_ref) ne 'CODE';
 
     return $self->_new_related([
         $self->_cur_el_iterrate(
@@ -221,7 +221,7 @@ sub remap {
                 local $_ = $el_xc;
                 my @new_elements = $code_ref->();
 
-                # element removed
+                # Element removed.
                 if (!defined($new_elements[0])) {
                     $el_xc->rm;
                     return;
@@ -233,18 +233,18 @@ sub remap {
                     @{$_->current_elements}
                 } @new_elements;
 
-                # element removed
+                # Element removed.
                 if (@new_elements == 0) {
                     $el_xc->rm;
                     return;
                 }
 
-                # if changed, replace first new element with the old one
+                # If changed, replace the first new element with the old one.
                 if ($new_elements[0]->{eid} != $el->{eid}) {
                     $el->{lxml}->replaceNode($new_elements[0]->{lxml});
                     $el = $new_elements[0];
                 }
-                # add all the rest after
+                # Add all the rest after it.
                 my $i = 1;
                 while ($i < @new_elements) {
                     $el->{lxml}->parentNode->insertAfter($new_elements[$i]->{lxml},$new_elements[$i-1]->{lxml});
@@ -280,7 +280,7 @@ sub remove_and_parent {
 sub attr {
     my ($self, @attrs) = @_;
 
-    croak 'need new attribute name ' unless @attrs;
+    croak 'need an attribute name' unless @attrs;
 
     # getter
     if (@attrs == 1) {
@@ -428,7 +428,7 @@ sub set_io_any {$_[0]->{_xc}->set_io_any($_[1], $_[2])}
 
 sub single {
     my ($self) = @_;
-    croak 'more current elements then one'
+    croak 'more than one current element'
         if @{$self->current_elements} > 1;
     croak 'no current element' unless @{$self->current_elements} == 1;
     my $element = @{$self->current_elements}[0];
@@ -448,7 +448,7 @@ sub reg_global_ns {
 
 sub _cur_el_iterrate {
     my ($self, $code_ref) = @_;
-    croak 'need code ref a argument' unless ref($code_ref) eq 'CODE';
+    croak 'need a code ref argument' unless ref($code_ref) eq 'CODE';
     return map {$code_ref->($_) if !$_->{deleted}} @{$self->current_elements};
 }
 
@@ -462,7 +462,7 @@ sub _new_related {
         _xc         => $self->{_xc},
     ) if @$current_elements == 1;
 
-    # make current_elements uniq
+    # Make current_elements unique.
     my %uniq_eid;
     $current_elements =
         [grep {$uniq_eid{$_->{eid}} ? 0 : ($uniq_eid{$_->{eid}} = 1)}
@@ -482,7 +482,7 @@ __END__
 
 =head1 NAME
 
-XML::Chain::Selector - selector for traversing the XML::Chain
+XML::Chain::Selector - selector for traversing XML::Chain
 
 =head1 SYNOPSIS
 
@@ -517,32 +517,49 @@ Will print:
 
 =head1 DESCRIPTION
 
+L<XML::Chain::Selector> represents the current selection of one or more
+XML nodes inside an L<XML::Chain> document. Most chained methods either
+modify those nodes or return a new selector with an updated selection.
+
+When exactly one node is selected, XML::Chain may return an
+L<XML::Chain::Element> object instead, which is a subclass for the
+single-element case.
+
 =head1 CHAINED METHODS
 
 =head2 c, append_and_select
 
-Appends new element to current elements and changes context to them. New
-element is defined in parameters:
+Appends a new element to the current elements and changes the context to
+them. The new element is defined by the parameters:
 
     $xc->c('i', class => 'icon-download icon-white')
     # <i class="icon-download icon-white"/>
 
-First parameter is name of the element, then followed by optional element
+The first parameter is the element name, followed by optional element
 attributes.
+
+=head2 a, append
+
+Appends a new element to the current elements and then moves the current
+selection back to the parent elements.
+
+    xc('body')
+        ->a('p', '-' => 'one')
+        ->a('p', '-' => 'two');
+    # <body><p>one</p><p>two</p></body>
 
 =head2 t, append_text
 
-Appends text to current elements.
+Appends text to the current elements.
 
     xc('span')->t('some')->t(' ')->t('more text')
     # <span>some more text</span>
 
-First parameter is name of the element, then followed by optional element
-attributes.
+The first parameter is the text to append.
 
 =head2 root
 
-Sets document element as current element.
+Sets the document element as the current element.
 
     say xc('p')
         ->t('this ')
@@ -553,50 +570,50 @@ Sets document element as current element.
 
 =head2 up, parent
 
-Traverse current elements and replace them by their parents.
+Traverses the current elements and replaces them with their parents.
 
 =head2 find
 
     say $xc->find('//p/b[@class="less"]')->text_content;
     say $xc->find('//xhtml:div', xhtml => 'http://www.w3.org/1999/xhtml')->count;
 
-Look-up elements by xpath and set them as current elements. Optional
-look-up namespace prefixes can be specified. Any global registered
-namespace prefixes L</reg_global_ns> can be used.
+Looks up elements by XPath and sets them as the current elements. Optional
+namespace prefixes for lookups can be specified. Any globally registered
+namespace prefixes from L</reg_global_ns> can be used.
 
 =head2 children
 
-Set all current elements child nodes as current elements.
+Sets all child nodes of the current elements as the current elements.
 
 =head2 first
 
-Set first current elements as current elements.
+Sets the first current element as the current element.
 
 =head2 empty
 
-Removes all child nodes from current elements.
+Removes all child nodes from the current elements.
 
 =head2 rename
 
     my $body = xc('bodyz')->rename('body');
     # <body/>
 
-Rename node name(s).
+Renames node name(s).
 
 =head2 attr
 
-    my $img = xc('img')->attr('href' => '#', 'title' => 'imaget');
-    # <img href="#" title="imaget"/>
+    my $img = xc('img')->attr('href' => '#', 'title' => 'image-title');
+    # <img href="#" title="image-title"/>
 
     say $img->attr('title')
-    # imaget
+    # image-title
 
     say $img->attr('title' => undef)
     # <img href="#"/>
 
-Get or set elements attributes. With one argument returns attribute value
-otherwise sets them. Setting attribute to C<undef> will remove it from
-the element.
+Gets or sets element attributes. With one argument, it returns the
+attribute value; otherwise, it sets the attributes. Setting an attribute
+to C<undef> removes it from the element.
 
 =head2 each
 
@@ -610,7 +627,7 @@ the element.
         ->each(sub { $_->rename('p') if $_->name =~ m/^p[.]/ });
     is($body, '<body><p>1</p><p>2</p><div>3</div><p>4</p></body>','rename using each()');
 
-Loops through all selected elements and calls callback for each of them.
+Loops through all selected elements and calls the callback for each one.
 
 =head2 remap
 
@@ -621,7 +638,7 @@ Loops through all selected elements and calls callback for each of them.
     )->root;
     # <body><e i="1"/><e i="2"/><e i="3"/><p i="1"/></body>
 
-Replaces all selected elements by callback returned elements.
+Replaces all selected elements with the elements returned by the callback.
 
 =head2 rm, remove_and_parent
 
@@ -639,8 +656,8 @@ Deletes current elements and returns their parent.
 
 =head2 auto_indent
 
-(experimental feature (good/usefull for debug, needs more testing),
-works only on element for which as_string is called at this moment)
+(experimental feature; useful for debugging, but it needs more testing;
+works only on the element for which C<as_string> is called at that moment)
 
     my $simple = xc('div')
                     ->auto_indent(1)
@@ -660,12 +677,12 @@ Will print:
         <div>in3</div>
     </div>
 
-Turn on/off tidy/auto-indentation of document elements. Default indentation
-characters are tabs.
+Turns tidy/auto-indentation of document elements on or off. The default
+indentation characters are tabs.
 
-Argument can be either true/false scalar or a hashref with indentation
-options. Currently C< {chars=>' 'x4} > will set indentation characters to
-be four spaces.
+The argument can be either a true/false scalar or a hashref with
+indentation options. Currently, C<{chars=>' 'x4}> sets the indentation
+characters to four spaces.
 
 =head1 CHAINED DOCUMENT METHODS
 
@@ -675,34 +692,38 @@ See L<XML::Chain/CHAINED DOCUMENT METHODS>.
 
 =head2 as_string, toString
 
-Returns string representation of current XML elements. Call L<root> before
-to get a string representing the whole document.
+Returns a string representation of the current XML elements. Call
+L<root> first to get a string representing the whole document.
 
     $xc->as_string
     $xc->root->as_string
 
 =head2 as_xml_libxml
 
-Returns array of current elements as L<XML::LibXML> objects.
+Returns the current elements as L<XML::LibXML> objects.
 
 =head2 text_content
 
-Returns text content of all current XML elements.
+Returns the text content of all current XML elements.
 
 =head2 count / size
 
     say $xc->find('//b')->count;
 
-Return the number of current elements.
+Returns the number of current elements.
 
 =head2 single
 
     my $lxml_el = $xc->find('//b')->first->as_xml_libxml;
 
-Checks is there is exactly one element in current elements and return it
-as L<XML::Chain::Element> object.
+Checks that there is exactly one current element and returns it as an
+L<XML::Chain::Element> object.
 
 =head2 reg_global_ns
+
+Registers a namespace prefix on the document element so that it can be
+used later in L</find> calls. The optional third argument controls
+whether the namespace is activated on the root element.
 
     $sitemap->reg_global_ns('i' => 'http://www.google.com/schemas/sitemap-image/1.1');
     $sitemap->reg_global_ns('s' => 'http://www.sitemaps.org/schemas/sitemap/0.9');

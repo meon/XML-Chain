@@ -22,13 +22,13 @@ subtest 'xc()' => sub {
     is($body->as_string, '<body></body>', 'create an element');
 
     my $body_class = xc('body', {'data-a' => 'b', class => 'myClass'});
-    is($body_class->as_string, '<body class="myClass" data-a="b"></body>', 'create an element with hash attribute');
+    is($body_class->as_string, '<body class="myClass" data-a="b"></body>', 'create an element with hash attributes');
     my $body_class2 = xc('body', class => 'myClass', onLoad => 'alert("yay!")');
-    is($body_class2->as_string, '<body class="myClass" onLoad="alert(&quot;yay!&quot;)"></body>', 'create an element with sorted attributes');
+    is($body_class2->as_string, '<body class="myClass" onLoad="alert(&quot;yay!&quot;)"></body>', 'create an element with attributes');
     my $load_file = xc([$Bin, 'tdata', '01_basics.xml']);
     is($load_file->as_string, '<hello><world></world></hello>', 'create from file (IO::Any)');
 
-    is(xc(\'<body><h1>and</h1><h1>head</h1></body>')->find('//h1')->count, 2, '=head3 xc($what_ref); -> parsing xml strings');
+    is(xc(\'<body><h1>and</h1><h1>head</h1></body>')->find('//h1')->count, 2, '=head3 xc($what_ref); parses XML strings');
 
     my $over_el = xc('overload');
     is("$over_el", '<overload></overload>', '=head2 as_string; sample');
@@ -41,7 +41,7 @@ subtest 'basic creation / removal' => sub {
     my $body = xc('body');
     my $h1 = $body->c('h1')->t('I am heading');
     isa_ok($h1,'XML::Chain::Selector','$h1 → selector on traversal');
-    is($body, '<body><h1>I am heading</h1></body>', 'selector create an element');
+    is($body, '<body><h1>I am heading</h1></body>', 'selector creates an element');
     cmp_ok($body->as_string, 'eq', $body->toString, 'toString alias to as_string');
 
     my $div = xc('div', class => 'pretty')
@@ -50,7 +50,7 @@ subtest 'basic creation / removal' => sub {
                 ->c('p', class => 'intro')->t('world')
                 ->root
                 ->a( xc('p')->t('of chained XML.') );
-    is($div->as_string, '<div class="pretty"><h1>hello</h1><p class="intro">world</p><p>of chained XML.</p></div>', '=head1 SYNOPSIS; block1 -> chained create elements');
+    is($div->as_string, '<div class="pretty"><h1>hello</h1><p class="intro">world</p><p>of chained XML.</p></div>', '=head1 SYNOPSIS; block 1 -> chained element creation');
 
     my $icon_el = xc('i', class => 'icon-download icon-white');
     is($icon_el->as_string, '<i class="icon-download icon-white"></i>', '=head2 xc; sample');
@@ -95,7 +95,7 @@ subtest 'navigation' => sub {
                     ->up
                 ->c('p')->t('the last one')
                 ->root;
-    is($body, '<body><p>para1</p><p>para2 <b>important</b> para2_2 <b class="less">less important</b> para2_3</p><p>the last one</p></body>', 'test test xml');
+    is($body, '<body><p>para1</p><p>para2 <b>important</b> para2_2 <b class="less">less important</b> para2_3</p><p>the last one</p></body>', 'build nested XML');
     isa_ok($body->find('//b')->first->as_xml_libxml, 'XML::LibXML::Element', 'first <b>');
     isa_ok($body->children->first->as_xml_libxml, 'XML::LibXML::Element', 'first <p>');
 
@@ -111,7 +111,7 @@ subtest 'copy elements between documents' => sub {
     my $new_body = xc('body')
         ->a(xc('div')->a($body->find('/body/p')))
         ->a(xc('div')->t('second div'));
-    is($new_body->single->as_string, '<body><div><p class="1"></p><p class="2"></p></div><div>second div</div></body>', 'test test xml inside divs');
+    is($new_body->single->as_string, '<body><div><p class="1"></p><p class="2"></p></div><div>second div</div></body>', 'copy selected XML inside divs');
 };
 
 subtest 'loop over elements, rename' => sub {
@@ -153,16 +153,16 @@ subtest 'loop over elements, rename' => sub {
     my $remap2 = xc(\'<body><p>1</p><p>2</p><div>3</div><p>4</p></body>');
     $remap2->children->remap(sub {(
         ($_->name eq 'div')
-        ? xc('p')->t($_->text_content)         # replace <div> for <p>
+        ? xc('p')->t($_->text_content)         # replace <div> with <p>
         : $_->text_content eq '2'
-        ? (                                    # replace node with text "2" for 3x <div>
+        ? (                                    # replace the node with text "2" with 3 <div> elements
             xc('div')->t(2),
             xc('div')->t(21),
             xc('div')->t(22),
         )
         : $_->text_content eq '4'
-        ? undef                                # delete <p> with text "4"
-        : $_                                   # first <p> kept
+        ? undef                                # delete the <p> with text "4"
+        : $_                                   # keep the first <p>
     )});
     is($remap2, '<body><p>1</p><div>2</div><div>21</div><div>22</div><p>3</p></body>','replace and delete element via remap()');
 
@@ -183,7 +183,7 @@ subtest 'store' => sub {
     xc('body')->t('save me')->set_io_any([$tmp_dir, 't01.xml'])->store;
     is(xc($tmp_file)->text_content, 'save me', '=head1 CHAINED DOCUMENT METHODS; ->store() and load via file');
 
-    isa_ok(xc($tmp_file)->empty->c('div')->t('updated')->store, 'XML::Chain::Element', '->store() returns xc element');
+    isa_ok(xc($tmp_file)->empty->c('div')->t('updated')->store, 'XML::Chain::Element', '->store() returns an xc element');
     is($tmp_file->slurp.'', '<body><div>updated</div></body>', 'load & ->store() via file');
 };
 

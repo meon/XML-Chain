@@ -30,29 +30,29 @@ __END__
 
 =head1 NAME
 
-XML::Chain::Element - helper class for XML::Chain representing single element
+XML::Chain::Element - helper class for XML::Chain representing a single element
 
 =head1 SYNOPSIS
 
-    xc('body')->c(h1)->t('title')->root
+    xc('body')->c('h1')->t('title')->root
 
 =head1 DESCRIPTION
 
-Returned by L<XML::Chain::Selector/single> call.
+Returned by L<XML::Chain::Selector/single>.
 
 =head1 METHODS
 
 =head2 name
 
-return element name
+Returns the element name.
 
 =head2 as_xml_libxml
 
-Returns L<XML::LibXML::Element> object.
+Returns an L<XML::LibXML::Element> object.
 
 =head2 XML::Chain::Selector methods
 
-All of the L<XML::Chain::Selector> methods works too.
+All L<XML::Chain::Selector> methods work here as well.
 
 =head1 AUTHOR
 

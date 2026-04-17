@@ -47,7 +47,7 @@ subtest 'element namespaces' => sub {
             'z' => 'http://www.sitemaps.org/schemas/sitemap/0.9',
             )->count,
         2,
-        'two image:images elements'
+        'two image:image elements'
     );
 };
 
@@ -67,7 +67,7 @@ subtest 'create document with 2 namespaces' => sub {
         url    => 'http://blog.kutej.net/static/img/bulk-discount.jpg'
     )->t("\n");
 
-    eq_or_diff($feed->as_string, ns_document(), 'namespace elements');
+    eq_or_diff($feed->as_string, ns_document(), 'namespace elements render correctly');
 };
 
 done_testing;

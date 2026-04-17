@@ -27,7 +27,7 @@ subtest 'XML::Chain' => sub {
     is(
         $div->as_string,
         '<div class="pretty"><h1>hello</h1><p class="intro">world</p><p>of chained XML.</p></div>',
-        'synopsis chunk 1',
+        'Synopsis section 1',
     );
 
     my $sitemap =
@@ -51,7 +51,7 @@ subtest 'XML::Chain' => sub {
         .qq{<url><loc>https://metacpan.org/pod/XML::Chain::Selector</loc><lastmod>2017-10-08</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>\n}
         .qq{<url><loc>https://metacpan.org/pod/XML::Chain::Element</loc><lastmod>2017-10-06</lastmod><changefreq>monthly</changefreq><priority>0.5</priority></url>\n}
         .qq{</urlset>},
-        'synopsis chunk 2',
+        'Synopsis section 2',
     );
 };
 

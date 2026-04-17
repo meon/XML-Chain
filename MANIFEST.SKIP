@@ -6,6 +6,8 @@
 ^\.git
 \.cvsignore
 \.svnignore
+\.vscode
+\.github
 
 # Avoid Makemaker generated and utility files.
 ^Makefile$
@@ -31,6 +33,7 @@
 ^tmp/
 .*\.tar\.gz
 ^MYMETA.yml$
+^TODO.md
 ^XML-Chain-
 
 ^.tracker.json$

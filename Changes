@@ -1,15 +1,15 @@
 0.07  2024-XX-XX
-    - xml namespaces handling when creating elements with ns prefixes
+    - XML namespace handling when creating elements with namespace prefixes
     - xmlns attribute present only when needed
-    - clean xc() creation with XML::LibXML::Document as parameter
+    - cleaner xc() creation with XML::LibXML::Document as a parameter
 
 0.06  2018-11-21
     - fix configure_requires dependency, thanks Slaven Rezic (RT127733)
 
 0.05  2017-10-17
-    - set_io_any() accepts second argument, IO::Any options
-    - using canical XML - toStringC14N() for stringification
-    - replaces XML::Tidy with _reindent_children() function (experimental)
+    - set_io_any() accepts a second argument, IO::Any options
+    - using canonical XML - toStringC14N() for stringification
+    - replaces XML::Tidy with the _reindent_children() function (experimental)
 
 0.04  2017-10-08
     - fix xc(XML::LibXML::Document->new()) case
@@ -31,10 +31,10 @@
     - namespaces support
     - chained methods reworked into selectors (XML::Chain::Selector)
     - add find($xpath) method
-    - first version of auto_indent(1) using XML::Tidy (don't use in persistent env [rt.cpan.org #120296])
+    - first version of auto_indent(1) using XML::Tidy (do not use in persistent environments [rt.cpan.org #120296])
     - single() method (XML::Chain::Element)
     - empty() method to remove all child elements
-    - loading & storing of xml files / xml strings using IO::Any
+    - loading and storing XML files / XML strings using IO::Any
 
 0.01  2017-01-18
     - initial prototype version

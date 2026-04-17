@@ -12,12 +12,12 @@ use lib "$Bin/lib";
 
 use XML::Chain qw(xc);
 
-subtest 'auto indent (synopsis of XML::Chain::Selector)' => sub {
-    # simple indent
+subtest 'auto indentation (synopsis of XML::Chain::Selector)' => sub {
+    # Simple indentation.
     my $simple = xc('div')->auto_indent(1)->c('div')->t('in')->root;
     eq_or_diff_text($simple->as_string, "<div>\n\t<div>in</div>\n</div>", 'auto indented simple');
 
-    # namespaces && auto indentation
+    # Namespaces and auto indentation.
     my $user = xc('user', xmlns => 'http://testns')->auto_indent({chars=>' 'x4})
         ->a('name', '-' => 'Johnny Thinker')
         ->a('username', '-' => 'jt')
@@ -30,7 +30,7 @@ subtest 'auto indent (synopsis of XML::Chain::Selector)' => sub {
             ->up
         ->a('active', '-' => '1')
         ->root;
-    eq_or_diff_text($user->as_string, user_as_string(), '=head1 SYNOPSIS; auto indented user');
+    eq_or_diff_text($user->as_string, user_as_string(), '=head1 SYNOPSIS; auto-indented user');
 };
 
 
