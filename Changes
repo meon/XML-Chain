@@ -1,4 +1,4 @@
-0.07  2026-XX-XX
+0.07  2026-04-21
     - XML namespace handling when creating elements with namespace prefixes
     - xmlns attribute present only when needed
     - cleaner xc() creation with XML::LibXML::Document as a parameter
