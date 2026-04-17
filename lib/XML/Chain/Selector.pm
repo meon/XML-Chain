@@ -86,6 +86,12 @@ sub parent {
                 sub {
                     my ($el) = @_;
                     my $parent_el = $el->{lxml}->parentNode;
+
+                    # Stop at the document root: if parent is a document
+                    # node, return the current element unchanged
+                    return $el
+                        if $parent_el->nodeType == XML_DOCUMENT_NODE;
+
                     return $self->{_xc}->_xc_el_data($parent_el);
                 }
             )
@@ -576,6 +582,13 @@ Sets the document element as the current element.
 =head2 up, parent
 
 Traverses the current elements and replaces them with their parents.
+When called on the document root element, returns the same element
+unchanged (idempotent). This enables safe multichaining like
+C<< ->parent->parent >> without needing to check whether you've
+reached the root.
+
+    my $root = xc('<root><child></child></root>');
+    $root->parent->name eq 'root';
 
 =head2 find
 

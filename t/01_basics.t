@@ -52,6 +52,15 @@ subtest 'default parser' => sub {
     );
 };
 
+subtest 'parent() stops at root element' => sub {
+    my $root = xc(\'<root><child1><child2/></child1></root>');
+    is($root->name, 'root', 'root element named root');
+    my $at_root = $root->parent;
+    is($at_root->name, 'root', 'parent() on root returns root unchanged');
+    my $still_at_root = $at_root->parent->parent;
+    is($still_at_root->name, 'root', 'multichained parent() stays at root');
+};
+
 subtest 'basic creation / removal' => sub {
     my $body = xc('body');
     my $h1 = $body->c('h1')->t('I am heading');
