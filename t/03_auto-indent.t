@@ -33,6 +33,32 @@ subtest 'auto indentation (synopsis of XML::Chain::Selector)' => sub {
     eq_or_diff_text($user->as_string, user_as_string(), '=head1 SYNOPSIS; auto-indented user');
 };
 
+subtest 'auto indentation is non-destructive' => sub {
+    my $mixed = xc(\'<div><p>  keep   spacing  </p><p>second</p></div>');
+    my $before_plain = $mixed->as_xml_libxml->toStringC14N;
+
+    $mixed->auto_indent(1);
+    my $indented_once = $mixed->as_string;
+    my $after_plain = $mixed->as_xml_libxml->toStringC14N;
+    my $indented_twice = $mixed->as_string;
+
+    is(
+        $after_plain,
+        $before_plain,
+        'auto_indent() does not mutate the original DOM content',
+    );
+    is(
+        $after_plain,
+        '<div><p>  keep   spacing  </p><p>second</p></div>',
+        'original text spacing is preserved after auto-indented rendering',
+    );
+    is(
+        $indented_twice,
+        $indented_once,
+        'auto-indented serialization is idempotent',
+    );
+};
+
 
 done_testing;
 

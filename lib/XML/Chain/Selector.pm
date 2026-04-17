@@ -335,11 +335,15 @@ sub as_string {
                 $auto_indent_chars = "\t"
                     unless defined($auto_indent_chars);
 
-                return (
-                    $auto_indent
-                    ? _reindent_children($el->{lxml}, $auto_indent_chars)->toStringC14N
-                    : $el->{lxml}->toStringC14N
-                );
+                my $render_el = $el->{lxml};
+                if ($auto_indent) {
+                    my $render_doc = XML::LibXML::Document->new('1.0', 'UTF-8');
+                    $render_el = $render_doc->importNode($render_el, 1);
+                    $render_doc->setDocumentElement($render_el);
+                    _reindent_children($render_el, $auto_indent_chars);
+                }
+
+                return $render_el->toStringC14N;
             }
         )
     );
