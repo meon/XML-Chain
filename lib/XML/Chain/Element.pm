@@ -8,6 +8,7 @@ use 5.010;
 our $VERSION = '0.07';
 
 use Moose;
+use namespace::autoclean;
 use MooseX::Aliases;
 use Carp qw(croak);
 
@@ -21,6 +22,8 @@ has '_xc'         => (is => 'rw', isa => 'XML::Chain', required => 1);
 sub as_xml_libxml    {return $_[0]->{_xc_el_data}->{lxml};}
 sub name             {return $_[0]->{_xc_el_data}->{lxml}->nodeName;}
 sub current_elements {return [$_[0]->_xc_el_data];}
+
+__PACKAGE__->meta->make_immutable();
 
 1;
 

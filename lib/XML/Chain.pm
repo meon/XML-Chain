@@ -14,6 +14,7 @@ use Carp qw(croak confess);
 use Scalar::Util qw(blessed);
 use IO::Any;
 use Moose;
+use namespace::autoclean;
 use Moose::Exporter;
 use Try::Tiny;
 Moose::Exporter->setup_import_methods(as_is => ['xc'],);
@@ -166,6 +167,8 @@ sub set_io_any {
     $self->{io_any_opts} = $opts // {};
     return $self->document_element;
 }
+
+__PACKAGE__->meta->make_immutable();
 
 1;
 

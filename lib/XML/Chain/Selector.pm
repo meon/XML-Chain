@@ -8,6 +8,7 @@ use 5.010;
 our $VERSION = '0.07';
 
 use Moose;
+use namespace::autoclean;
 use MooseX::Aliases;
 use Carp qw(croak);
 use XML::LibXML qw(:libxml);
@@ -484,6 +485,8 @@ sub _new_related {
         _xc              => $self->{_xc},
     );
 }
+
+__PACKAGE__->meta->make_immutable();
 
 1;
 
