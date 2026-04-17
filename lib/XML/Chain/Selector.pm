@@ -703,7 +703,10 @@ L<root> first to get a string representing the whole document.
 
 =head2 as_xml_libxml
 
-Returns the current elements as L<XML::LibXML> objects.
+Returns the current elements as L<XML::LibXML> objects. In list context,
+selectors may return multiple nodes. For the single-element case,
+L<XML::Chain::Element/as_xml_libxml> returns one
+L<XML::LibXML::Element> object.
 
 =head2 text_content
 
@@ -720,7 +723,8 @@ Returns the number of current elements.
     my $lxml_el = $xc->find('//b')->first->as_xml_libxml;
 
 Checks that there is exactly one current element and returns it as an
-L<XML::Chain::Element> object.
+L<XML::Chain::Element> object. It throws an exception if the selection
+is empty or contains more than one element.
 
 =head2 reg_global_ns
 
