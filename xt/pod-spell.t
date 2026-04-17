@@ -28,6 +28,7 @@ add_stopwords(qw(
         DTD
         attr
         multichaining
+        DOM
         )
 );
 all_pod_files_spelling_ok();

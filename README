@@ -138,14 +138,6 @@ CHAINED DOCUMENT METHODS
 
         my $root = $xc->document_element;
 
-TODO
-
-        - partial/special tidy (on elements inside xml)
-        - per ->data() storage
-        - ->each(sub {...}) / ->map(sub {}) / ->grep(sub {})
-        - setting and handling namespaces and elements with ns prefixes
-        - ~ton of selectors and manipulators to be added
-
 CONTRIBUTORS & CREDITS
 
     Initially inspired by Strophe.Builder, then also by jQuery.
@@ -341,6 +333,29 @@ CHAINED METHODS
     Loops through all selected elements and calls the callback for each
     one.
 
+ map_selection
+
+        my $children = xc(\'<root><a/><b/><c/></root>')->children->map_selection(sub { $_ });
+        # returns a selector with the same elements
+    
+        my $first_children = $root->find('//p')->map_selection(sub { $_->children->first });
+        # returns a selector of the first child of each <p>
+
+    Applies the callback to each selected element ($_ is set to the
+    element). Returns a new selector built from all XML::Chain::Selector
+    objects returned by the callback. Elements for which the callback
+    returns nothing (or a non-selector value) are omitted from the result.
+    The DOM is never modified.
+
+ grep_selection
+
+        my $ps = xc(\'<body><p/><div/><p/></body>')->children->grep_selection(sub { $_->name eq 'p' });
+        # $ps->count == 2
+
+    Filters the selection. Returns a new selector containing only the
+    elements for which the callback returns a true value ($_ is set to the
+    element). Implemented in terms of "map_selection".
+
  remap
 
         xc('body')->a('p', i => 1)->children->remap(
@@ -461,6 +476,38 @@ METHODS
 
     Saves the XML to the target configured via set_io_any. See "store" in
     XML::Chain for details.
+
+ data
+
+    Stores and retrieves arbitrary metadata on selected elements without
+    affecting the XML content (jQuery-style .data() method).
+
+        # Set data on element
+        $element->data(user_id => 42);
+        $element->data(status => 'active');
+    
+        # Get specific data key
+        my $user_id = $element->data('user_id');
+    
+        # Get all data keys as hash
+        my $all = $element->data;
+    
+        # Set on multiple elements
+        $elements->data(processed => 1);
+
+    Calling with no arguments returns a hash reference of all stored data
+    for the first element in the selection.
+
+    Calling with one argument returns the value for that key in the first
+    element.
+
+    Calling with two or more arguments sets the key/value on all elements
+    in the selection and returns $self for chaining.
+
+    Important: Data storage is tied to element identity within a document.
+    If an element is copied or imported to another document, the data does
+    not survive the operation (the new element will have an empty data
+    store).
 
 AUTHOR
 

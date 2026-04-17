@@ -182,4 +182,32 @@ subtest 'data() storage - per-element metadata' => sub {
     is($item1->data('processed'), 1, 'multi-element set adds new keys');
 };
 
+subtest 'map_selection() and grep_selection()' => sub {
+    my $root = xc(\'<root><p>one</p><div>two</div><p>three</p><span>four</span></root>');
+
+    # grep_selection - filter by element name
+    my $ps = $root->children->grep_selection(sub { $_->name eq 'p' });
+    is($ps->count, 2, 'grep_selection() returns matching elements');
+    is($ps->first->text_content, 'one', 'grep_selection() first matched element');
+
+    # grep_selection - filter by text content
+    my $long = $root->children->grep_selection(sub { length($_->text_content) > 3 });
+    is($long->count, 2, 'grep_selection() filters by text length');
+
+    # grep_selection - empty result
+    my $none = $root->children->grep_selection(sub { $_->name eq 'article' });
+    is($none->count, 0, 'grep_selection() returns empty selector when nothing matches');
+
+    # map_selection - identity returns all elements
+    my $divs = $root->children->map_selection(sub { $_ });
+    is($divs->count, 4, 'map_selection() with identity returns all elements');
+
+    # map_selection - return only matching elements (filter via map_selection)
+    my $only_p = $root->children->map_selection(sub { $_->name eq 'p' ? $_ : () });
+    is($only_p->count, 2, 'map_selection() can filter by returning nothing');
+
+    # chaining: grep_selection then count
+    is($root->children->grep_selection(sub { $_->name ne 'div' })->count, 3, 'grep_selection() chains correctly');
+};
+
 done_testing();

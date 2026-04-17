@@ -214,6 +214,35 @@ sub each {
     return $self;
 }
 
+sub map_selection {
+    my ($self, $code_ref) = @_;
+    croak 'need a code ref' if ref($code_ref) ne 'CODE';
+
+    return $self->_new_related([
+        $self->_cur_el_iterrate(
+            sub {
+                my ($el) = @_;
+                local $_ = XML::Chain::Element->new(
+                    _xc_el_data => $el,
+                    _xc         => $self->{_xc},
+                );
+                my @results = $code_ref->();
+                return
+                    CORE::map { @{$_->current_elements} }
+                    CORE::grep { defined($_) && ref($_) && $_->isa('XML::Chain::Selector') }
+                    @results;
+            }
+        )
+    ]);
+}
+
+sub grep_selection {
+    my ($self, $code_ref) = @_;
+    croak 'need a code ref' if ref($code_ref) ne 'CODE';
+
+    return $self->map_selection(sub { $code_ref->() ? $_ : () });
+}
+
 sub remap {
     my ($self, $code_ref) = @_;
     croak 'need a code ref' if ref($code_ref) ne 'CODE';
@@ -680,6 +709,28 @@ to C<undef> removes it from the element.
     is($body, '<body><p>1</p><p>2</p><div>3</div><p>4</p></body>','rename using each()');
 
 Loops through all selected elements and calls the callback for each one.
+
+=head2 map_selection
+
+    my $children = xc(\'<root><a/><b/><c/></root>')->children->map_selection(sub { $_ });
+    # returns a selector with the same elements
+
+    my $first_children = $root->find('//p')->map_selection(sub { $_->children->first });
+    # returns a selector of the first child of each <p>
+
+Applies the callback to each selected element (C<$_> is set to the element).
+Returns a new selector built from all C<XML::Chain::Selector> objects returned
+by the callback.  Elements for which the callback returns nothing (or a
+non-selector value) are omitted from the result. The DOM is never modified.
+
+=head2 grep_selection
+
+    my $ps = xc(\'<body><p/><div/><p/></body>')->children->grep_selection(sub { $_->name eq 'p' });
+    # $ps->count == 2
+
+Filters the selection. Returns a new selector containing only the elements for
+which the callback returns a true value (C<$_> is set to the element).
+Implemented in terms of L</map_selection>.
 
 =head2 remap
 

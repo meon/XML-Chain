@@ -6,6 +6,7 @@
     - auto_indent() formatting no longer mutates the original DOM
     - reference inputs are now parsed via a private safe default XML::LibXML parser
     - parent() now stops at the document root (returns same element when called on root)
+    - add map_selection() and grep_selection() methods for functional element filtering and transformation
     - add data() method for storing arbitrary per-element metadata
 
 0.06  2018-11-21
