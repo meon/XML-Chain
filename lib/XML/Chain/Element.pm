@@ -7,23 +7,28 @@ use 5.010;
 
 our $VERSION = '0.07';
 
-use Moose;
-use namespace::autoclean;
-use MooseX::Aliases;
+use parent qw(XML::Chain::Selector);
+use Class::XSAccessor accessors => [qw(_xc_el_data)];
 use Carp qw(croak);
-
-extends qw(XML::Chain::Selector);
 
 use overload '""' => \&XML::Chain::Selector::as_string, fallback => 1;
 
-has '_xc_el_data' => ( is => 'ro', isa => 'HashRef',    required => 1 );
-has '_xc'         => ( is => 'rw', isa => 'XML::Chain', required => 1 );
+sub new {
+    my ( $class, @args ) = @_;
+    my %args =
+        ( ( @args == 1 ) && ( ref( $args[0] ) eq 'HASH' ) )
+        ? %{ $args[0] }
+        : @args;
+
+    return bless {
+        _xc_el_data => $args{_xc_el_data},
+        _xc         => $args{_xc},
+    }, $class;
+}
 
 sub as_xml_libxml    { return $_[0]->{_xc_el_data}->{lxml}; }
 sub name             { return $_[0]->{_xc_el_data}->{lxml}->nodeName; }
 sub current_elements { return [ $_[0]->_xc_el_data ]; }
-
-__PACKAGE__->meta->make_immutable();
 
 1;
 
@@ -44,6 +49,10 @@ XML::Chain::Element - helper class for XML::Chain representing a single element
 Returned by L<XML::Chain::Selector/single>.
 
 =head1 METHODS
+
+=head2 new
+
+Creates a new element wrapper.
 
 =head2 name
 

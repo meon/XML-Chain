@@ -13,19 +13,36 @@ use XML::Chain::Element;
 use Carp         qw(croak confess);
 use Scalar::Util qw(blessed);
 use IO::Any;
-use Moose;
-use namespace::autoclean;
-use Moose::Exporter;
+use Class::XSAccessor accessors => [qw(dom _xml_libxml)];
 use Try::Tiny;
-Moose::Exporter->setup_import_methods( as_is => ['xc'], );
 
-has 'dom' => ( is => 'rw', isa => 'XML::LibXML::Document', lazy_build => 1 );
-has '_xml_libxml' => (
-    is      => 'rw',
-    isa     => 'XML::LibXML',
-    lazy    => 1,
-    default => sub { XML::LibXML->new }
-);
+our @EXPORT_OK = qw(xc);
+
+sub import {
+    my ( $class, @args ) = @_;
+    my $caller = caller;
+    for my $name (@args) {
+        if ( $name eq 'xc' ) {
+            no strict 'refs';
+            *{ $caller . '::xc' } = \&xc;
+        }
+        else {
+            croak qq{"$name" is not exported by the $class module};
+        }
+    }
+    return;
+}
+
+sub new {
+    my ( $class, @args ) = @_;
+    my %args =
+        @args == 1 && ref( $args[0] ) eq 'HASH' ? %{ $args[0] } : @args;
+
+    my $self = bless { _xml_libxml => XML::LibXML->new, }, $class;
+
+    $self->{dom} = $args{dom} || $self->_build_dom;
+    return $self;
+}
 
 sub _default_parser {
     my $parser = XML::LibXML->new();
@@ -180,8 +197,6 @@ sub set_io_any {
     return $self->document_element;
 }
 
-__PACKAGE__->meta->make_immutable();
-
 1;
 
 __END__
@@ -307,6 +322,18 @@ An element with C<$scalar> will be created as the document element.
 =head1 CHAINED METHODS, METHODS and ELEMENT METHODS
 
 See L<XML::Chain::Selector> and L<XML::Chain::Element>.
+
+=head1 METHODS
+
+=head2 new
+
+Creates a new C<XML::Chain> object. Optional named arguments is C<dom>
+(an existing L<XML::LibXML::Document>).
+
+=head2 dom
+
+Gets or sets the current L<XML::LibXML::Document> instance used by the
+object.
 
 =head1 CHAINED DOCUMENT METHODS
 

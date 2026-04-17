@@ -7,22 +7,23 @@ use 5.010;
 
 our $VERSION = '0.07';
 
-use Moose;
-use namespace::autoclean;
-use MooseX::Aliases;
+use Class::XSAccessor accessors => [qw(current_elements _xc)];
 use Carp        qw(croak);
 use XML::LibXML qw(:libxml);
 
-has 'current_elements' =>
-    ( is => 'rw', isa => 'ArrayRef', default => sub { [] } );
-has '_xc' => ( is => 'rw', isa => 'XML::Chain', required => 1 );
+sub new {
+    my ( $class, @args ) = @_;
+    my %args = @args == 1 && ref( $args[0] ) eq 'HASH' ? %{ $args[0] } : @args;
+
+    return bless {
+        current_elements => $args{current_elements} || [],
+        _xc              => $args{_xc},
+    }, $class;
+}
 
 use overload '""' => \&as_string, fallback => 1;
 
 ### chained methods
-
-alias c                  => 'append_and_select';
-alias append_and_current => 'append_and_select';    # name until <= 0.02
 
 sub append_and_select {
     my ( $self, $el_name, @attrs ) = @_;
@@ -57,14 +58,15 @@ sub append_and_select {
     );
 }
 
-alias a => 'append';
+*c                  = \&append_and_select;
+*append_and_current = \&append_and_select;    # name until <= 0.02
 
 sub append {
     my ( $self, $el_name, @attrs ) = @_;
     return $self->append_and_select( $el_name, @attrs )->parent;
 }
 
-alias t => 'append_text';
+*a = \&append;
 
 sub append_text {
     my ( $self, $text ) = @_;
@@ -78,7 +80,7 @@ sub append_text {
     return $self;
 }
 
-alias up => 'parent';
+*t = \&append_text;
 
 sub parent {
     my ($self) = @_;
@@ -101,12 +103,14 @@ sub parent {
     );
 }
 
-alias root => 'document_element';
+*up = \&parent;
 
 sub document_element {
     my ($self) = @_;
     return $self->{_xc}->document_element;
 }
+
+*root = \&document_element;
 
 sub find {
     my ( $self, $xpath, @namespaces ) = @_;
@@ -304,7 +308,6 @@ sub remap {
     return $self;
 }
 
-alias rm => 'remove_and_parent';
 
 sub remove_and_parent {
     my ($self) = @_;
@@ -321,6 +324,8 @@ sub remove_and_parent {
 
     return $parent;
 }
+
+*rm = \&remove_and_parent;
 
 sub attr {
     my ( $self, @attrs ) = @_;
@@ -363,7 +368,7 @@ sub attr {
 
 ### methods
 
-alias toString => 'as_string';
+*toString = \&as_string;
 
 sub as_string {
     my ($self) = @_;
@@ -469,14 +474,14 @@ sub as_xml_libxml {
     return @elements;
 }
 
-alias size => 'count';
-
 sub count {
     my ($self) = @_;
     my $count = 0;
     $self->_cur_el_iterrate( sub { $count++ } );
     return $count;
 }
+
+*size = \&count;
 
 sub store      { $_[0]->{_xc}->store }
 sub set_io_any { $_[0]->{_xc}->set_io_any( $_[1], $_[2] ) }
@@ -563,8 +568,6 @@ sub _new_related {
     );
 }
 
-__PACKAGE__->meta->make_immutable();
-
 1;
 
 __END__
@@ -618,7 +621,7 @@ single-element case.
 
 =head1 CHAINED METHODS
 
-=head2 c, append_and_select
+=head2 c, append_and_current, append_and_select
 
 Appends a new element to the current elements and changes the context to
 them. The new element is defined by the parameters:
@@ -811,6 +814,14 @@ characters to four spaces.
 See L<XML::Chain/CHAINED DOCUMENT METHODS>.
 
 =head1 METHODS
+
+=head2 new
+
+Creates a new selector object from named arguments.
+
+=head2 current_elements
+
+Gets or sets the internal array reference of currently selected elements.
 
 =head2 as_string, toString
 

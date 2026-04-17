@@ -29,6 +29,7 @@ add_stopwords( qw(
         attr
         multichaining
         DOM
+        dom
     )
 );
 all_pod_files_spelling_ok();
