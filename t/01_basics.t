@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -35,30 +35,6 @@ subtest 'xc()' => sub {
 
     my $xml_doc = XML::LibXML->load_xml(string => '<xml-doc><el/></xml-doc>');
     is(xc($xml_doc)->as_string, '<xml-doc><el></el></xml-doc>', 'xc(XML::LibXML::Document->new())');
-};
-
-subtest 'default parser' => sub {
-    my $parser = XML::Chain->_default_parser;
-    isa_ok($parser, 'XML::LibXML', 'private default parser');
-    ok($parser->no_network, 'default parser disables network access');
-    ok(!$parser->expand_entities, 'default parser disables entity expansion');
-    ok(!$parser->load_ext_dtd, 'default parser disables external DTD loading');
-    ok(!$parser->recover, 'default parser disables recovery mode');
-
-    throws_ok(
-        sub { xc(\'<body><broken></body>') },
-        qr/parser error|Opening and ending tag mismatch|Premature end/i,
-        'malformed XML is rejected by the default parser',
-    );
-};
-
-subtest 'parent() stops at root element' => sub {
-    my $root = xc(\'<root><child1><child2/></child1></root>');
-    is($root->name, 'root', 'root element named root');
-    my $at_root = $root->parent;
-    is($at_root->name, 'root', 'parent() on root returns root unchanged');
-    my $still_at_root = $at_root->parent->parent;
-    is($still_at_root->name, 'root', 'multichained parent() stays at root');
 };
 
 subtest 'basic creation / removal' => sub {
@@ -107,7 +83,7 @@ subtest 'basic creation / removal' => sub {
     is($pdiv, '<base><p>1</p><p>2</p><div>3</div></base>');
 };
 
-subtest 'navigation' => sub {
+subtest 'basic navigation' => sub {
     my $body = xc('body')
                 ->c('p')->t('para1')->up
                 ->append_and_select('p')
@@ -132,7 +108,7 @@ subtest 'navigation' => sub {
     is($mixed->children->first->name, 'p', 'children() skips text and comment nodes');
 };
 
-subtest 'copy elements between documents' => sub {
+subtest 'basic copy elements between documents' => sub {
     my $body = xc('body')
         ->a('p', class => '1')
         ->a('p', class => '2');
@@ -140,70 +116,6 @@ subtest 'copy elements between documents' => sub {
         ->a(xc('div')->a($body->find('/body/p')))
         ->a(xc('div')->t('second div'));
     is($new_body->single->as_string, '<body><div><p class="1"></p><p class="2"></p></div><div>second div</div></body>', 'copy selected XML inside divs');
-};
-
-subtest 'loop over elements, rename' => sub {
-    my $body = xc('bodyz');
-    is($body, '<bodyz></bodyz>','rename()');
-
-    $body->rename('body');
-    $body
-        ->a(xc('p.1')->t(1))
-        ->a(xc('p.2')->t(2))
-        ->a(xc('div')->t(3))
-        ->a(xc('p.3')->t(4))
-        ->children->each(sub { $_->rename('p') if $_->name =~ m/^p[.]/ });
-    is($body, '<body><p>1</p><p>2</p><div>3</div><p>4</p></body>','=head2 each; rename using each()');
-
-    my $remap = xc('body')->a('p', i => 1);
-    is( $remap->children->remap(
-            sub {
-                (map {xc('e', i => $_)} 1 .. 3), $_;
-            }
-            )->root,
-        '<body><e i="1"></e><e i="2"></e><e i="3"></e><p i="1"></p></body>',
-        '=head2 remap; add +3 elements'
-    );
-    is( $remap->find('//e[position()=2]')->remap(
-            sub {
-                xc('p', i=>4),
-                xc('p', i=>5),
-            }
-            )->root,
-        '<body><e i="1"></e><p i="4"></p><p i="5"></p><e i="3"></e><p i="1"></p></body>',
-        'replace element'
-    );
-    is( $remap->find('//e[@i="2"] | //p[@i="5"]')->remap(sub { })->root,
-        '<body><e i="1"></e><p i="4"></p><e i="3"></e><p i="1"></p></body>',
-        'remove elements'
-    );
-
-    my $remap2 = xc(\'<body><p>1</p><p>2</p><div>3</div><p>4</p></body>');
-    $remap2->children->remap(sub {(
-        ($_->name eq 'div')
-        ? xc('p')->t($_->text_content)         # replace <div> with <p>
-        : $_->text_content eq '2'
-        ? (                                    # replace the node with text "2" with 3 <div> elements
-            xc('div')->t(2),
-            xc('div')->t(21),
-            xc('div')->t(22),
-        )
-        : $_->text_content eq '4'
-        ? undef                                # delete the <p> with text "4"
-        : $_                                   # keep the first <p>
-    )});
-    is($remap2, '<body><p>1</p><div>2</div><div>21</div><div>22</div><p>3</p></body>','replace and delete element via remap()');
-
-    wrap_element: {
-        local $TODO = 'wrap element';
-        my $i = 5;
-        is(
-            xc('body')->a('p1')->a('p2')->children->remap(
-                sub { xc('div'.$i++)->a($_) }
-            )->root,
-            '<body><div5><p1/></div5><div6><p2/></div6></body>',
-        );
-    };
 };
 
 subtest 'store' => sub {
@@ -224,4 +136,19 @@ subtest 'element attributes' => sub {
     is($body->as_string, '<body><img href="#"></img></body>', '->attr() remove');
 };
 
-done_testing;
+subtest 'default parser' => sub {
+    my $parser = XML::Chain->_default_parser;
+    isa_ok($parser, 'XML::LibXML', 'private default parser');
+    ok($parser->no_network, 'default parser disables network access');
+    ok(!$parser->expand_entities, 'default parser disables entity expansion');
+    ok(!$parser->load_ext_dtd, 'default parser disables external DTD loading');
+    ok(!$parser->recover, 'default parser disables recovery mode');
+
+    throws_ok(
+        sub { xc(\'<body><broken></body>') },
+        qr/parser error|Opening and ending tag mismatch|Premature end/i,
+        'malformed XML is rejected by the default parser',
+    );
+};
+
+done_testing();

@@ -757,6 +757,21 @@ whether the namespace is activated on the root element.
     say $sitemap->find('/s:urlset/s:url/i:image')->count
     # 2
 
+=head2 document_element
+
+Returns the document root element as an L<XML::Chain::Element> object.
+This is an alias for C<root>.
+
+=head2 set_io_any
+
+Stores C<$what, $options> for L<IO::Any> for future use with C<store>.
+See L<XML::Chain/set_io_any> for details.
+
+=head2 store
+
+Saves the XML to the target configured via C<set_io_any>.
+See L<XML::Chain/store> for details.
+
 =head1 AUTHOR
 
 Jozef Kutej

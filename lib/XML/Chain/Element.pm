@@ -53,6 +53,12 @@ Returns the element name.
 
 Returns an L<XML::LibXML::Element> object.
 
+=head2 current_elements
+
+Returns the element wrapped in an array reference for internal consistency
+with L<XML::Chain::Selector>. Selectors always work with arrays of elements,
+and Element overrides this to return its single element as a 1-element array.
+
 =head2 XML::Chain::Selector methods
 
 All L<XML::Chain::Selector> methods work here as well.

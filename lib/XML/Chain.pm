@@ -314,13 +314,12 @@ Stores C<$what, $options> for L<IO::Any> for future use with C<< ->store() >>.
 Calls C<< IO::Any->spew($io_any, $self->as_string, {atomic => 1}) >> to
 save XML back to the target configured via C<set_io_any>.
 
-=head1 TODO
+=head2 document_element
 
-    - partial/special tidy (on elements inside xml)
-    - per ->data() storage
-    - ->each(sub {...}) / ->map(sub {}) / ->grep(sub {})
-    - setting and handling namespaces and elements with ns prefixes
-    - ~ton of selectors and manipulators to be added
+Returns the document root element as an L<XML::Chain::Element> object.
+This is a convenience method equivalent to C<< ->root >> on a selector.
+
+    my $root = $xc->document_element;
 
 =head1 CONTRIBUTORS & CREDITS
 

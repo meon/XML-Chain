@@ -25,6 +25,9 @@ add_stopwords(qw(
         xc
         jQuery
         xpath
+        DTD
+        attr
+        multichaining
         )
 );
 all_pod_files_spelling_ok();

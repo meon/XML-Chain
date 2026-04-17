@@ -57,6 +57,10 @@ EXPORTS
     description, and "CHAINED METHODS" in XML::Chain::Selector for methods
     on the returned object.
 
+    In practice, xc() accepts four input categories: a scalar element name,
+    an XML::LibXML document or node, an existing selector/element, or some
+    other reference that IO::Any can read and XML::LibXML can parse.
+
   xc($el_name, @attrs) scalar with 1+ arguments
 
     An element with $el_name will be created as the document element, and
@@ -80,11 +84,20 @@ EXPORTS
 
       The node is used as the document element.
 
+      If you need custom parser behavior, parse the XML yourself with your
+      own XML::LibXML instance and pass the resulting document or node to
+      xc().
+
   xc($what_ref)
 
     Any other reference will be passed to "slurp($what)" in IO::Any, then
-    parsed by "load_xml" in XML::LibXML, and the result will be set as the
-    document element.
+    parsed by XML::Chain's private safe default parser, and the result will
+    be set as the document element.
+
+    The default parser disables network access, external DTD loading,
+    automatic entity expansion, and recovery from malformed XML. If you
+    need different parser behavior, parse the XML yourself and pass the
+    resulting XML::LibXML::Document or XML::LibXML::Node to xc().
 
         say xc([$tmp_dir, 't01.xml'])->as_string
         say xc(\'<body><h1>and</h1><h1>head</h1></body>')
@@ -117,6 +130,13 @@ CHAINED DOCUMENT METHODS
 
     Calls IO::Any->spew($io_any, $self->as_string, {atomic => 1}) to save
     XML back to the target configured via set_io_any.
+
+ document_element
+
+    Returns the document root element as an XML::Chain::Element object.
+    This is a convenience method equivalent to ->root on a selector.
+
+        my $root = $xc->document_element;
 
 TODO
 
@@ -220,6 +240,16 @@ CHAINED METHODS
     The first parameter is the element name, followed by optional element
     attributes.
 
+ a, append
+
+    Appends a new element to the current elements and then moves the
+    current selection back to the parent elements.
+
+        xc('body')
+            ->a('p', '-' => 'one')
+            ->a('p', '-' => 'two');
+        # <body><p>one</p><p>two</p></body>
+
  t, append_text
 
     Appends text to the current elements.
@@ -243,6 +273,13 @@ CHAINED METHODS
  up, parent
 
     Traverses the current elements and replaces them with their parents.
+    When called on the document root element, returns the same element
+    unchanged (idempotent). This enables safe multichaining like
+    ->parent->parent without needing to check whether you've reached the
+    root.
+
+        my $root = xc('<root><child></child></root>');
+        $root->parent->name eq 'root';
 
  find
 
@@ -255,7 +292,9 @@ CHAINED METHODS
 
  children
 
-    Sets all child nodes of the current elements as the current elements.
+    Sets all child elements of the current elements as the current
+    elements. Non-element child nodes, such as text nodes and comments, are
+    skipped.
 
  first
 
@@ -278,7 +317,7 @@ CHAINED METHODS
         # <img href="#" title="image-title"/>
     
         say $img->attr('title')
-        # image
+        # image-title
     
         say $img->attr('title' => undef)
         # <img href="#"/>
@@ -374,7 +413,10 @@ METHODS
 
  as_xml_libxml
 
-    Returns the current elements as XML::LibXML objects.
+    Returns the current elements as XML::LibXML objects. In list context,
+    selectors may return multiple nodes. For the single-element case,
+    "as_xml_libxml" in XML::Chain::Element returns one XML::LibXML::Element
+    object.
 
  text_content
 
@@ -391,7 +433,8 @@ METHODS
         my $lxml_el = $xc->find('//b')->first->as_xml_libxml;
 
     Checks that there is exactly one current element and returns it as an
-    XML::Chain::Element object.
+    XML::Chain::Element object. It throws an exception if the selection is
+    empty or contains more than one element.
 
  reg_global_ns
 
@@ -403,6 +446,21 @@ METHODS
         $sitemap->reg_global_ns('s' => 'http://www.sitemaps.org/schemas/sitemap/0.9');
         say $sitemap->find('/s:urlset/s:url/i:image')->count
         # 2
+
+ document_element
+
+    Returns the document root element as an XML::Chain::Element object.
+    This is an alias for root.
+
+ set_io_any
+
+    Stores $what, $options for IO::Any for future use with store. See
+    "set_io_any" in XML::Chain for details.
+
+ store
+
+    Saves the XML to the target configured via set_io_any. See "store" in
+    XML::Chain for details.
 
 AUTHOR
 
@@ -424,7 +482,7 @@ NAME
 
 SYNOPSIS
 
-        xc('body')->c(h1)->t('title')->root
+        xc('body')->c('h1')->t('title')->root
 
 DESCRIPTION
 
@@ -439,6 +497,13 @@ METHODS
  as_xml_libxml
 
     Returns an XML::LibXML::Element object.
+
+ current_elements
+
+    Returns the element wrapped in an array reference for internal
+    consistency with XML::Chain::Selector. Selectors always work with
+    arrays of elements, and Element overrides this to return its single
+    element as a 1-element array.
 
  XML::Chain::Selector methods
 
