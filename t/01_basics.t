@@ -102,6 +102,10 @@ subtest 'navigation' => sub {
     is($body->find('//b')->count, 2, 'two <b> tags');
     is($body->find('//p/b[@class="less"]')->text_content, 'less important', q{find('//p/b[@class="less"]')});
     is($body->find('/body/p[position() = last()]')->text_content, 'the last one', q{find('/body/p[position() = last()]')});
+
+    my $mixed = xc(\'<body>before<p>one</p><!-- note --><p>two</p>after</body>');
+    is($mixed->children->count, 2, 'children() returns only child elements');
+    is($mixed->children->first->name, 'p', 'children() skips text and comment nodes');
 };
 
 subtest 'copy elements between documents' => sub {

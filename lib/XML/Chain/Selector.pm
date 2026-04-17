@@ -135,6 +135,7 @@ sub children {
                     my ($el) = @_;
                     return
                         map {$self->{_xc}->_xc_el_data($_)}
+                        grep { $_->nodeType == XML_ELEMENT_NODE }
                         $el->{lxml}->childNodes;
                 }
             )
@@ -583,7 +584,9 @@ namespace prefixes from L</reg_global_ns> can be used.
 
 =head2 children
 
-Sets all child nodes of the current elements as the current elements.
+Sets all child elements of the current elements as the current
+elements. Non-element child nodes, such as text nodes and comments, are
+skipped.
 
 =head2 first
 
