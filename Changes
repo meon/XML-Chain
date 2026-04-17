@@ -4,6 +4,7 @@
     - cleaner xc() creation with XML::LibXML::Document as a parameter
     - children() now returns only child elements to match chaining semantics
     - auto_indent() formatting no longer mutates the original DOM
+    - reference inputs are now parsed via a private safe default XML::LibXML parser
 
 0.06  2018-11-21
     - fix configure_requires dependency, thanks Slaven Rezic (RT127733)

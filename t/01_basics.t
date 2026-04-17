@@ -37,6 +37,21 @@ subtest 'xc()' => sub {
     is(xc($xml_doc)->as_string, '<xml-doc><el></el></xml-doc>', 'xc(XML::LibXML::Document->new())');
 };
 
+subtest 'default parser' => sub {
+    my $parser = XML::Chain->_default_parser;
+    isa_ok($parser, 'XML::LibXML', 'private default parser');
+    ok($parser->no_network, 'default parser disables network access');
+    ok(!$parser->expand_entities, 'default parser disables entity expansion');
+    ok(!$parser->load_ext_dtd, 'default parser disables external DTD loading');
+    ok(!$parser->recover, 'default parser disables recovery mode');
+
+    throws_ok(
+        sub { xc(\'<body><broken></body>') },
+        qr/parser error|Opening and ending tag mismatch|Premature end/i,
+        'malformed XML is rejected by the default parser',
+    );
+};
+
 subtest 'basic creation / removal' => sub {
     my $body = xc('body');
     my $h1 = $body->c('h1')->t('I am heading');

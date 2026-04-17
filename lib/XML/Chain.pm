@@ -26,6 +26,15 @@ has '_xml_libxml' => (
     default => sub {XML::LibXML->new}
 );
 
+sub _default_parser {
+    my $parser = XML::LibXML->new();
+    $parser->no_network(1);
+    $parser->expand_entities(0);
+    $parser->load_ext_dtd(0);
+    $parser->recover(0);
+    return $parser;
+}
+
 sub _build_dom {
     my ($self) = @_;
     return $self->_xml_libxml->createDocument("1.0", "UTF-8");
@@ -80,7 +89,7 @@ sub _create_element {
 
         unless (@create_elements) {
             $self->{io_any} = $el_name_object;
-            my $dom = XML::LibXML->load_xml(
+            my $dom = $self->_default_parser->load_xml(
                 string => IO::Any->slurp($el_name_object),
             );
             @create_elements = $self->_xc_el_data($dom->documentElement);
@@ -224,7 +233,7 @@ description, and L<XML::Chain::Selector/CHAINED METHODS> for methods on
 the returned object.
 
 In practice, C<xc()> accepts four input categories: a scalar element
-name, an XML::LibXML document or node, an existing selector/element, or
+name, an L<XML::LibXML> document or node, an existing selector/element, or
 some other reference that L<IO::Any> can read and L<XML::LibXML> can
 parse.
 
@@ -253,13 +262,22 @@ The document is used directly.
 
 The node is used as the document element.
 
+If you need custom parser behavior, parse the XML yourself with your own
+L<XML::LibXML> instance and pass the resulting document or node to
+C<xc()>.
+
 =back
 
 =head3 xc($what_ref)
 
 Any other reference will be passed to L<IO::Any/slurp($what)>, then
-parsed by L<XML::LibXML/load_xml>, and the result will be set as the
-document element.
+parsed by XML::Chain's private safe default parser, and the result will
+be set as the document element.
+
+The default parser disables network access, external DTD loading,
+automatic entity expansion, and recovery from malformed XML. If you need
+different parser behavior, parse the XML yourself and pass the resulting
+L<XML::LibXML::Document> or L<XML::LibXML::Node> to C<xc()>.
 
     say xc([$tmp_dir, 't01.xml'])->as_string
     say xc(\'<body><h1>and</h1><h1>head</h1></body>')
