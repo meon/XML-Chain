@@ -11,66 +11,71 @@ use XML::Chain qw(xc);
 
 subtest 'loop over elements, rename' => sub {
     my $body = xc('bodyz');
-    is($body, '<bodyz></bodyz>','rename()');
+    is( $body, '<bodyz></bodyz>', 'rename()' );
 
     $body->rename('body');
-    $body
-        ->a(xc('p.1')->t(1))
-        ->a(xc('p.2')->t(2))
-        ->a(xc('div')->t(3))
-        ->a(xc('p.3')->t(4))
-        ->children->each(sub { $_->rename('p') if $_->name =~ m/^p[.]/ });
-    is($body, '<body><p>1</p><p>2</p><div>3</div><p>4</p></body>','=head2 each; rename using each()');
+    $body->a( xc('p.1')->t(1) )->a( xc('p.2')->t(2) )->a( xc('div')->t(3) )
+        ->a( xc('p.3')->t(4) )
+        ->children->each( sub { $_->rename('p') if $_->name =~ m/^p[.]/ } );
+    is( $body,
+        '<body><p>1</p><p>2</p><div>3</div><p>4</p></body>',
+        '=head2 each; rename using each()'
+    );
 
-    my $remap = xc('body')->a('p', i => 1);
+    my $remap = xc('body')->a( 'p', i => 1 );
     is( $remap->children->remap(
             sub {
-                (map {xc('e', i => $_)} 1 .. 3), $_;
+                ( map { xc( 'e', i => $_ ) } 1 .. 3 ), $_;
             }
-            )->root,
+        )->root,
         '<body><e i="1"></e><e i="2"></e><e i="3"></e><p i="1"></p></body>',
         '=head2 remap; add +3 elements'
     );
     is( $remap->find('//e[position()=2]')->remap(
             sub {
-                xc('p', i=>4),
-                xc('p', i=>5),
+                xc( 'p', i => 4 ), xc( 'p', i => 5 ),;
             }
-            )->root,
+        )->root,
         '<body><e i="1"></e><p i="4"></p><p i="5"></p><e i="3"></e><p i="1"></p></body>',
         'replace element'
     );
-    is( $remap->find('//e[@i="2"] | //p[@i="5"]')->remap(sub { })->root,
+    is( $remap->find('//e[@i="2"] | //p[@i="5"]')->remap( sub { } )->root,
         '<body><e i="1"></e><p i="4"></p><e i="3"></e><p i="1"></p></body>',
         'remove elements'
     );
 
-    my $remap2 = xc(\'<body><p>1</p><p>2</p><div>3</div><p>4</p></body>');
-    $remap2->children->remap(sub {(
-        ($_->name eq 'div')
-        ? xc('p')->t($_->text_content)         # replace <div> with <p>
-        : $_->text_content eq '2'
-        ? (                                    # replace the node with text "2" with 3 <div> elements
-            xc('div')->t(2),
-            xc('div')->t(21),
-            xc('div')->t(22),
-        )
-        : $_->text_content eq '4'
-        ? undef                                # delete the <p> with text "4"
-        : $_                                   # keep the first <p>
-    )});
-    is($remap2, '<body><p>1</p><div>2</div><div>21</div><div>22</div><p>3</p></body>','replace and delete element via remap()');
+    my $remap2 = xc( \'<body><p>1</p><p>2</p><div>3</div><p>4</p></body>' );
+    $remap2->children->remap(
+        sub {
+            (   ( $_->name eq 'div' )
+                ? xc('p')->t( $_->text_content )    # replace <div> with <p>
+                : $_->text_content eq '2'
+                ? (    # replace the node with text "2" with 3 <div> elements
+                    xc('div')->t(2),
+                    xc('div')->t(21),
+                    xc('div')->t(22),
+                    )
+                : $_->text_content eq '4'
+                ? undef    # delete the <p> with text "4"
+                : $_       # keep the first <p>
+            )
+        }
+    );
+    is( $remap2,
+        '<body><p>1</p><div>2</div><div>21</div><div>22</div><p>3</p></body>',
+        'replace and delete element via remap()'
+    );
 
-    wrap_element: {
+wrap_element: {
         local $TODO = 'wrap element';
         my $i = 5;
-        is(
-            xc('body')->a('p1')->a('p2')->children->remap(
-                sub { xc('div'.$i++)->a($_) }
-            )->root,
+        is( xc('body')
+                ->a('p1')
+                ->a('p2')
+                ->children->remap( sub { xc( 'div' . $i++ )->a($_) } )->root,
             '<body><div5><p1/></div5><div6><p2/></div6></body>',
         );
-    };
+    }
 };
 
 subtest 'root-level navigation edge cases' => sub {
@@ -146,12 +151,12 @@ subtest 'multi-element single() failures' => sub {
 };
 
 subtest 'parent() stops at root element' => sub {
-    my $root = xc(\'<root><child1><child2/></child1></root>');
-    is($root->name, 'root', 'root element named root');
+    my $root = xc( \'<root><child1><child2/></child1></root>' );
+    is( $root->name, 'root', 'root element named root' );
     my $at_root = $root->parent;
-    is($at_root->name, 'root', 'parent() on root returns root unchanged');
+    is( $at_root->name, 'root', 'parent() on root returns root unchanged' );
     my $still_at_root = $at_root->parent->parent;
-    is($still_at_root->name, 'root', 'multichained parent() stays at root');
+    is( $still_at_root->name, 'root', 'multichained parent() stays at root' );
 };
 
 done_testing();

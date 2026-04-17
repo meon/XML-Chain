@@ -10,9 +10,10 @@ use Test::Most;
 use XML::Chain qw(xc);
 
 subtest 'cross-document append' => sub {
+
     # Create two independent documents
-    my $doc1 = xc('list1')->a('item', '-' => 'from doc1');
-    my $doc2 = xc('list2')->a('item', '-' => 'from doc2');
+    my $doc1 = xc('list1')->a( 'item', '-' => 'from doc1' );
+    my $doc2 = xc('list2')->a( 'item', '-' => 'from doc2' );
 
     # Get a node from doc2
     my $item_from_doc2 = $doc2->find('//item')->first;
@@ -27,18 +28,20 @@ subtest 'cross-document append' => sub {
     # Note: Depending on implementation, the node might be cloned or
     # moved. The key is it should work without crashing.
     my $items_in_container = $container->children;
-    is( $items_in_container->count, 1,
-        'item from doc2 is now in doc1 container' );
+    is( $items_in_container->count,
+        1, 'item from doc2 is now in doc1 container' );
 };
 
 subtest 'cross-document remap' => sub {
-    # Create two documents
-    my $doc1 = xc('root1')
-        ->a('x', '-' => '1')
-        ->a('x', '-' => '2')
-        ->a('x', '-' => '3');
 
-    my $doc2 = xc('root2')->a('y', '-' => 'replacement');
+    # Create two documents
+    my $doc1 =
+        xc('root1')
+        ->a( 'x', '-' => '1' )
+        ->a( 'x', '-' => '2' )
+        ->a( 'x', '-' => '3' );
+
+    my $doc2 = xc('root2')->a( 'y', '-' => 'replacement' );
 
     # Get replacements from different document
     my $replacement = $doc2->find('//y')->first;
@@ -63,9 +66,10 @@ subtest 'cross-document remap' => sub {
 };
 
 subtest 'cross-document node identity' => sub {
+
     # Create sources
-    my $doc1 = xc('source1')->a('el', id => 'a');
-    my $doc2 = xc('source2')->a('el', id => 'b');
+    my $doc1 = xc('source1')->a( 'el', id => 'a' );
+    my $doc2 = xc('source2')->a( 'el', id => 'b' );
 
     # Get nodes
     my $el_from_1 = $doc1->find('//el[@id="a"]')->first;
@@ -90,38 +94,37 @@ subtest 'cross-document node identity' => sub {
 };
 
 subtest 'cross-document find and modify' => sub {
-    # Create independent documents
-    my $docA = xc('tree')
-        ->a('branch', id => '1')
-        ->up
-        ->a('branch', id => '2');
 
-    my $docB = xc('tree')
-        ->a('branch', id => 'x')
-        ->up
-        ->a('branch', id => 'y');
+    # Create independent documents
+    my $docA =
+        xc('tree')->a( 'branch', id => '1' )->up->a( 'branch', id => '2' );
+
+    my $docB =
+        xc('tree')->a( 'branch', id => 'x' )->up->a( 'branch', id => 'y' );
 
     # Find and modify in docA
     my $branch_1 = $docA->find('//branch[@id="1"]')->first;
     $branch_1->attr( source => 'docA' );
 
     # Get a branch from docB and append to docA
-    my $branch_x = $docB->find('//branch[@id="x"]')->first;
+    my $branch_x  = $docB->find('//branch[@id="x"]')->first;
     my $container = $docA->c('imports');
+
     # This tests that we can handle nodes from different documents
     $container->append($branch_x);
 
     # Verify structure
-    is( $docA->find('//branch')->count, 3,
-        'docA now has all its branches plus imported one' );
+    is( $docA->find('//branch')->count,
+        3, 'docA now has all its branches plus imported one' );
 
     my $imported = $docA->find('//branch[@id="x"]');
     is( $imported->count, 1, 'imported branch from docB is in docA' );
 };
 
 subtest 'cross-document empty/leaf operations' => sub {
+
     # Test operations on nodes from different documents
-    my $doc1 = xc('parent')->a('child', '-' => 'text');
+    my $doc1 = xc('parent')->a( 'child', '-' => 'text' );
     my $doc2 = xc('donor')->a('empty_el');
 
     # Get empty element from doc2
@@ -131,28 +134,28 @@ subtest 'cross-document empty/leaf operations' => sub {
     my $child = $doc1->find('//child')->first;
 
     # Try to append to empty from another doc
-    my $result = $doc1->c('container')->append($empty)->up->find('//empty_el');
+    my $result =
+        $doc1->c('container')->append($empty)->up->find('//empty_el');
     is( $result->count, 1,
         'empty element from another document can be appended' );
 
     # Verify children of imported element
     my $empty_children = $result->children;
-    is( $empty_children->count, 0,
-        'imported empty element remains empty' );
+    is( $empty_children->count, 0, 'imported empty element remains empty' );
 };
 
 subtest 'data() storage - cross-document behavior' => sub {
-    my $doc1 = xc(\'<root><el id="a"/></root>');
-    my $doc2 = xc(\'<root><el id="b"/></root>');
+    my $doc1 = xc( \'<root><el id="a"/></root>' );
+    my $doc2 = xc( \'<root><el id="b"/></root>' );
 
     # Set data in doc1
     my $el_a = $doc1->find('//el[@id="a"]')->first;
-    $el_a->data(source => 'doc1');
-    is($el_a->data('source'), 'doc1', 'data set in doc1');
+    $el_a->data( source => 'doc1' );
+    is( $el_a->data('source'), 'doc1', 'data set in doc1' );
 
     # Try to move/copy element to doc2
     my $el_b = $doc2->find('//el[@id="b"]')->first;
-    $el_b->data(source => 'doc2');
+    $el_b->data( source => 'doc2' );
 
     # Append el_a to doc2
     $doc2->c('imported')->append($el_a);
@@ -160,14 +163,17 @@ subtest 'data() storage - cross-document behavior' => sub {
     # The imported element is now a new object with a new unique_key
     # It will NOT have the data from doc1
     my $imported = $doc2->find('//el[@id="a"]')->first;
+
     # NOTE: This element is now orphaned from the original _xc_el_data cache
     # So data() returns empty hash (new element, no data set)
     my $imported_data = $imported->data;
-    is_deeply($imported_data, {}, 'data does NOT survive cross-document operations');
+    is_deeply( $imported_data, {},
+        'data does NOT survive cross-document operations' );
 
     # el_b still has its original data in doc2
     my $el_b_check = $doc2->find('//el[@id="b"]')->first;
-    is($el_b_check->data('source'), 'doc2', 'other document data unaffected');
+    is( $el_b_check->data('source'),
+        'doc2', 'other document data unaffected' );
 };
 
 done_testing;

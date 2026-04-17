@@ -13,48 +13,48 @@ use lib "$Bin/lib";
 use XML::Chain qw(xc);
 
 subtest 'auto indentation (synopsis of XML::Chain::Selector)' => sub {
+
     # Simple indentation.
     my $simple = xc('div')->auto_indent(1)->c('div')->t('in')->root;
-    eq_or_diff_text($simple->as_string, "<div>\n\t<div>in</div>\n</div>", 'auto indented simple');
+    eq_or_diff_text(
+        $simple->as_string,
+        "<div>\n\t<div>in</div>\n</div>",
+        'auto indented simple'
+    );
 
     # Namespaces and auto indentation.
-    my $user = xc('user', xmlns => 'http://testns')->auto_indent({chars=>' 'x4})
-        ->a('name', '-' => 'Johnny Thinker')
-        ->a('username', '-' => 'jt')
+    my $user =
+        xc( 'user', xmlns => 'http://testns' )
+        ->auto_indent( { chars => ' ' x 4 } )
+        ->a( 'name',     '-' => 'Johnny Thinker' )
+        ->a( 'username', '-' => 'jt' )
         ->c('bio')
-            ->c('div', xmlns => 'http://www.w3.org/1999/xhtml')
-                ->a('h1', '-' => 'about')
-                ->a('p', '-' => '...')
-                ->up
-            ->a('greeting', '-' => 'Hey')
-            ->up
-        ->a('active', '-' => '1')
+        ->c( 'div', xmlns => 'http://www.w3.org/1999/xhtml' )
+        ->a( 'h1', '-' => 'about' )
+        ->a( 'p',  '-' => '...' )
+        ->up->a( 'greeting', '-' => 'Hey' )->up->a( 'active', '-' => '1' )
         ->root;
-    eq_or_diff_text($user->as_string, user_as_string(), '=head1 SYNOPSIS; auto-indented user');
+    eq_or_diff_text( $user->as_string, user_as_string(),
+        '=head1 SYNOPSIS; auto-indented user' );
 };
 
 subtest 'auto indentation is non-destructive' => sub {
-    my $mixed = xc(\'<div><p>  keep   spacing  </p><p>second</p></div>');
+    my $mixed = xc( \'<div><p>  keep   spacing  </p><p>second</p></div>' );
     my $before_plain = $mixed->as_xml_libxml->toStringC14N;
 
     $mixed->auto_indent(1);
-    my $indented_once = $mixed->as_string;
-    my $after_plain = $mixed->as_xml_libxml->toStringC14N;
+    my $indented_once  = $mixed->as_string;
+    my $after_plain    = $mixed->as_xml_libxml->toStringC14N;
     my $indented_twice = $mixed->as_string;
 
-    is(
-        $after_plain,
-        $before_plain,
+    is( $after_plain, $before_plain,
         'auto_indent() does not mutate the original DOM content',
     );
-    is(
-        $after_plain,
+    is( $after_plain,
         '<div><p>  keep   spacing  </p><p>second</p></div>',
         'original text spacing is preserved after auto-indented rendering',
     );
-    is(
-        $indented_twice,
-        $indented_once,
+    is( $indented_twice, $indented_once,
         'auto-indented serialization is idempotent',
     );
 };
@@ -284,7 +284,7 @@ sub user_as_string {
     <active>1</active>
 </user>
 __USER_AS_STRING__
-    ;
+        ;
     chomp($usr);
     return $usr;
 }

@@ -10,21 +10,21 @@ our $VERSION = '0.07';
 use XML::LibXML;
 use XML::Chain::Selector;
 use XML::Chain::Element;
-use Carp qw(croak confess);
+use Carp         qw(croak confess);
 use Scalar::Util qw(blessed);
 use IO::Any;
 use Moose;
 use namespace::autoclean;
 use Moose::Exporter;
 use Try::Tiny;
-Moose::Exporter->setup_import_methods(as_is => ['xc'],);
+Moose::Exporter->setup_import_methods( as_is => ['xc'], );
 
-has 'dom' => (is => 'rw', isa => 'XML::LibXML::Document', lazy_build => 1);
+has 'dom' => ( is => 'rw', isa => 'XML::LibXML::Document', lazy_build => 1 );
 has '_xml_libxml' => (
     is      => 'rw',
     isa     => 'XML::LibXML',
     lazy    => 1,
-    default => sub {XML::LibXML->new}
+    default => sub { XML::LibXML->new }
 );
 
 sub _default_parser {
@@ -38,31 +38,33 @@ sub _default_parser {
 
 sub _build_dom {
     my ($self) = @_;
-    return $self->_xml_libxml->createDocument("1.0", "UTF-8");
+    return $self->_xml_libxml->createDocument( "1.0", "UTF-8" );
 }
 
 sub xc {
-    my ($el_name_object, @attrs) = @_;
+    my ( $el_name_object, @attrs ) = @_;
 
     my $self = __PACKAGE__->new();
 
-    if (blessed($el_name_object) && $el_name_object->isa('XML::LibXML::Document')) {
+    if ( blessed($el_name_object)
+        && $el_name_object->isa('XML::LibXML::Document') ) {
         $self->dom($el_name_object);
     }
     else {
-        my $initial_el = $self->_create_element($el_name_object, undef, @attrs);
+        my $initial_el =
+            $self->_create_element( $el_name_object, undef, @attrs );
         confess 'document creation must be from single element'
             unless @$initial_el == 1;
-        $self->dom->setDocumentElement($initial_el->[0]->{lxml});
+        $self->dom->setDocumentElement( $initial_el->[0]->{lxml} );
     }
 
     return $self->document_element;
 }
 
 sub _create_element {
-    my ($self, $el_name_object, $ns, @attrs) = @_;
+    my ( $self, $el_name_object, $ns, @attrs ) = @_;
 
-    if (@attrs == 1) {
+    if ( @attrs == 1 ) {
         my $hash_attrs = $attrs[0];
         croak 'with two argument second argument must be hashref'
             unless ref($hash_attrs) eq 'HASH';
@@ -73,17 +75,19 @@ sub _create_element {
 
     my @create_elements;
     if (@attrs) {
+
         # Create a LibXML element.
     }
-    if (ref($el_name_object)) {
-        if (blessed($el_name_object)) {
-            if ($el_name_object->isa('XML::Chain::Selector')) {
-                @create_elements = @{$el_name_object->current_elements};
+    if ( ref($el_name_object) ) {
+        if ( blessed($el_name_object) ) {
+            if ( $el_name_object->isa('XML::Chain::Selector') ) {
+                @create_elements = @{ $el_name_object->current_elements };
             }
-            elsif ($el_name_object->isa('XML::LibXML::Document')) {
-                @create_elements = $self->_xc_el_data($el_name_object->documentElement);
+            elsif ( $el_name_object->isa('XML::LibXML::Document') ) {
+                @create_elements =
+                    $self->_xc_el_data( $el_name_object->documentElement );
             }
-            elsif ($el_name_object->isa('XML::LibXML::Node')) {
+            elsif ( $el_name_object->isa('XML::LibXML::Node') ) {
                 @create_elements = $self->_xc_el_data($el_name_object);
             }
         }
@@ -91,9 +95,8 @@ sub _create_element {
         unless (@create_elements) {
             $self->{io_any} = $el_name_object;
             my $dom = $self->_default_parser->load_xml(
-                string => IO::Any->slurp($el_name_object),
-            );
-            @create_elements = $self->_xc_el_data($dom->documentElement);
+                string => IO::Any->slurp($el_name_object), );
+            @create_elements = $self->_xc_el_data( $dom->documentElement );
         }
     }
     else {
@@ -101,22 +104,26 @@ sub _create_element {
     }
 
     unless (@create_elements) {
-        my $new_element = $self->dom->createElementNS($ns, $el_name_object);
+        my $new_element = $self->dom->createElementNS( $ns, $el_name_object );
         while (@attrs) {
             my $attr_name  = shift(@attrs);
             my $attr_value = shift(@attrs);
             next unless defined($attr_name);
             next unless defined($attr_value);
             next if $attr_name eq 'xmlns';
-            if ($attr_name eq '-') {
+            if ( $attr_name eq '-' ) {
                 $new_element->appendText($attr_value);
             }
             else {
                 try {
-                    $new_element->setAttribute($attr_name => $attr_value);
+                    $new_element->setAttribute( $attr_name => $attr_value );
                 }
                 catch {
-                    confess 'failed to set attribute "'.$attr_name.'" on "'.$el_name_object.'" - '.$_;
+                    confess 'failed to set attribute "'
+                        . $attr_name
+                        . '" on "'
+                        . $el_name_object . '" - '
+                        . $_;
                 };
             }
         }
@@ -127,14 +134,14 @@ sub _create_element {
 }
 
 sub _xc_el_data {
-    my ($self, $el) = @_;
+    my ( $self, $el ) = @_;
     croak 'need element as argument' unless defined($el);
 
     my $eid = $el->unique_key;
     return $self->{_xc_el_data}->{$eid} //= {
         eid   => $eid,
         lxml  => $el,
-        ns    => ($el->namespaceURI // ''),
+        ns    => ( $el->namespaceURI // '' ),
         _data => {},
     };
 }
@@ -143,28 +150,32 @@ sub _lxml_document_element {
     return $_[0]->dom->documentElement;
 }
 
-sub _xc {return $_[0];}
+sub _xc { return $_[0]; }
 
 sub document_element {
     my ($self) = @_;
     return XML::Chain::Element->new(
-        _xc_el_data => $self->_xc_el_data($self->_lxml_document_element),
+        _xc_el_data => $self->_xc_el_data( $self->_lxml_document_element ),
         _xc         => $self,
     );
 }
 
 sub store {
-    my ($self) = @_;
-    my $io_any = $self->{io_any};
+    my ($self)      = @_;
+    my $io_any      = $self->{io_any};
     my $io_any_opts = $self->{io_any_opts} // {};
     croak 'io_any was not set' unless $io_any;
-    IO::Any->spew($io_any, $self->document_element->as_string, {atomic => 1, %$io_any_opts});
+    IO::Any->spew(
+        $io_any,
+        $self->document_element->as_string,
+        { atomic => 1, %$io_any_opts }
+    );
     return $self->document_element;
 }
 
 sub set_io_any {
-    my ($self, $to_set, $opts) = @_;
-    $self->{io_any} = $to_set;
+    my ( $self, $to_set, $opts ) = @_;
+    $self->{io_any}      = $to_set;
     $self->{io_any_opts} = $opts // {};
     return $self->document_element;
 }
