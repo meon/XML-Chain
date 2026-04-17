@@ -456,6 +456,35 @@ sub reg_global_ns {
     return $self;
 }
 
+sub data {
+    my ($self, $key, $value) = @_;
+
+    # If called with no args or one arg, do a get-only call
+    if (@_ == 1) {
+        # Return all data for this selection (only first element)
+        my $el = @{$self->current_elements}[0];
+        return {} unless $el;
+        return $el->{_data} // {};
+    }
+    elsif (@_ == 2) {
+        # Get a specific key from first element
+        my $el = @{$self->current_elements}[0];
+        return undef unless $el;
+        return $el->{_data}->{$key};
+    }
+    else {
+        # Set a key on all current elements
+        $self->_cur_el_iterrate(
+            sub {
+                my ($el) = @_;
+                $el->{_data} //= {};
+                $el->{_data}->{$key} = $value;
+            }
+        );
+        return $self;
+    }
+}
+
 ### helpers
 
 sub _cur_el_iterrate {
@@ -771,6 +800,36 @@ See L<XML::Chain/set_io_any> for details.
 
 Saves the XML to the target configured via C<set_io_any>.
 See L<XML::Chain/store> for details.
+
+=head2 data
+
+Stores and retrieves arbitrary metadata on selected elements without affecting
+the XML content (jQuery-style .data() method).
+
+    # Set data on element
+    $element->data(user_id => 42);
+    $element->data(status => 'active');
+
+    # Get specific data key
+    my $user_id = $element->data('user_id');
+
+    # Get all data keys as hash
+    my $all = $element->data;
+
+    # Set on multiple elements
+    $elements->data(processed => 1);
+
+Calling with no arguments returns a hash reference of all stored data for the
+first element in the selection.
+
+Calling with one argument returns the value for that key in the first element.
+
+Calling with two or more arguments sets the key/value on all elements in the
+selection and returns C<$self> for chaining.
+
+B<Important:> Data storage is tied to element identity within a document. If
+an element is copied or imported to another document, the data does B<not>
+survive the operation (the new element will have an empty data store).
 
 =head1 AUTHOR
 

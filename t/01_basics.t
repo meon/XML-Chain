@@ -151,4 +151,35 @@ subtest 'default parser' => sub {
     );
 };
 
+subtest 'data() storage - per-element metadata' => sub {
+    my $root = xc(\'<root><item id="1"/><item id="2"/><item id="3"/></root>');
+
+    # Get and set on single element
+    my $item1 = $root->find('//item[@id="1"]')->first;
+    $item1->data(user_id => 42);
+    is($item1->data('user_id'), 42, 'data() set and get on single element');
+
+    # Multiple keys
+    $item1->data(status => 'active');
+    is($item1->data('status'), 'active', 'data() stores multiple keys');
+    is($item1->data('user_id'), 42, 'previously set data still accessible');
+
+    # Get all data
+    my $all_data = $item1->data;
+    is_deeply($all_data, {'user_id' => 42, 'status' => 'active'}, 'data() with no args returns all');
+
+    # Set on multi-element selection
+    my $all_items = $root->find('//item');
+    $all_items->data(processed => 1);
+    foreach my $item ($all_items->as_xml_libxml) {
+        # Get back as Element to check data
+        my $el = $root->find('//item[@id="' . $item->getAttribute('id') . '"]')->first;
+        is($el->data('processed'), 1, 'data() set on all elements in selection');
+    }
+
+    # Verify item1 still has its original data
+    is($item1->data('user_id'), 42, 'multi-element set does not overwrite existing data');
+    is($item1->data('processed'), 1, 'multi-element set adds new keys');
+};
+
 done_testing();

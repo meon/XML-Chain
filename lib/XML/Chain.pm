@@ -132,9 +132,10 @@ sub _xc_el_data {
 
     my $eid = $el->unique_key;
     return $self->{_xc_el_data}->{$eid} //= {
-        eid  => $eid,
-        lxml => $el,
-        ns   => ($el->namespaceURI // ''),
+        eid   => $eid,
+        lxml  => $el,
+        ns    => ($el->namespaceURI // ''),
+        _data => {},
     };
 }
 

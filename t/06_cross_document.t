@@ -141,4 +141,33 @@ subtest 'cross-document empty/leaf operations' => sub {
         'imported empty element remains empty' );
 };
 
+subtest 'data() storage - cross-document behavior' => sub {
+    my $doc1 = xc(\'<root><el id="a"/></root>');
+    my $doc2 = xc(\'<root><el id="b"/></root>');
+
+    # Set data in doc1
+    my $el_a = $doc1->find('//el[@id="a"]')->first;
+    $el_a->data(source => 'doc1');
+    is($el_a->data('source'), 'doc1', 'data set in doc1');
+
+    # Try to move/copy element to doc2
+    my $el_b = $doc2->find('//el[@id="b"]')->first;
+    $el_b->data(source => 'doc2');
+
+    # Append el_a to doc2
+    $doc2->c('imported')->append($el_a);
+
+    # The imported element is now a new object with a new unique_key
+    # It will NOT have the data from doc1
+    my $imported = $doc2->find('//el[@id="a"]')->first;
+    # NOTE: This element is now orphaned from the original _xc_el_data cache
+    # So data() returns empty hash (new element, no data set)
+    my $imported_data = $imported->data;
+    is_deeply($imported_data, {}, 'data does NOT survive cross-document operations');
+
+    # el_b still has its original data in doc2
+    my $el_b_check = $doc2->find('//el[@id="b"]')->first;
+    is($el_b_check->data('source'), 'doc2', 'other document data unaffected');
+};
+
 done_testing;
