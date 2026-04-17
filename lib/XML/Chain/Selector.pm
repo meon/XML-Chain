@@ -621,7 +621,7 @@ single-element case.
 
 =head1 CHAINED METHODS
 
-=head2 c, append_and_current, append_and_select
+=head2 c, append_and_select
 
 Appends a new element to the current elements and changes the context to
 them. The new element is defined by the parameters:

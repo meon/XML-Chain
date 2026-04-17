@@ -52,10 +52,9 @@ EXPORTS
         my $icon = xc('i', class => 'icon-download icon-white');
         # <i class="icon-download icon-white"/>
 
-    See also "c, append_and_current" in XML::Chain::Selector, from which
-    XML::Chain::Element inherits all methods, for the element parameter
-    description, and "CHAINED METHODS" in XML::Chain::Selector for methods
-    on the returned object.
+    See also XML::Chain::Selector, from which XML::Chain::Element inherits
+    all methods, for the element parameter description, and "CHAINED
+    METHODS" in XML::Chain::Selector for methods on the returned object.
 
     In practice, xc() accepts four input categories: a scalar element name,
     an XML::LibXML document or node, an existing selector/element, or some
@@ -112,6 +111,18 @@ EXPORTS
 CHAINED METHODS, METHODS and ELEMENT METHODS
 
     See XML::Chain::Selector and XML::Chain::Element.
+
+METHODS
+
+ new
+
+    Creates a new XML::Chain object. Optional named arguments is dom (an
+    existing XML::LibXML::Document).
+
+ dom
+
+    Gets or sets the current XML::LibXML::Document instance used by the
+    object.
 
 CHAINED DOCUMENT METHODS
 
@@ -418,6 +429,15 @@ CHAINED DOCUMENT METHODS
 
 METHODS
 
+ new
+
+    Creates a new selector object from named arguments.
+
+ current_elements
+
+    Gets or sets the internal array reference of currently selected
+    elements.
+
  as_string, toString
 
     Returns a string representation of the current XML elements. Call root
@@ -536,6 +556,10 @@ DESCRIPTION
     Returned by "single" in XML::Chain::Selector.
 
 METHODS
+
+ new
+
+    Creates a new element wrapper.
 
  name
 

@@ -257,7 +257,7 @@ with the document element provided in the parameters. For example:
     my $icon = xc('i', class => 'icon-download icon-white');
     # <i class="icon-download icon-white"/>
 
-See also L<XML::Chain::Selector/c, append_and_current>, from which
+See also L<XML::Chain::Selector>, from which
 L<XML::Chain::Element> inherits all methods, for the element parameter
 description, and L<XML::Chain::Selector/CHAINED METHODS> for methods on
 the returned object.
